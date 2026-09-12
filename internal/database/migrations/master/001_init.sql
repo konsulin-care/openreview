@@ -1,0 +1,2 @@
+-- Migration 001: Initialize master database schema
+-- Tables: actor, project, setting

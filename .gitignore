@@ -1,0 +1,40 @@
+# Go
+/vendor/
+*.exe
+*.test
+*.prof
+
+# Node / Astro
+node_modules/
+web/dist/
+web/.astro/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+
+# mise
+.mise/
+
+# SQLite (local, never committed)
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# Cache (machine-specific, disposable)
+cache/

@@ -1,0 +1,6 @@
+# OpenReview tool versions
+# Run: mise install
+
+[tools]
+go = "1.27.3"
+node = "26"
