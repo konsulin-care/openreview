@@ -10,8 +10,7 @@ pre-commit:
       run: golangci-lint run --new-from-rev=HEAD
     astro-check:
       glob: "*.{astro,ts,tsx}"
-      run: pnpm exec astro check
-      dir: web
+      run: pnpm --dir web exec astro check
 
 pre-push:
   parallel: true
@@ -21,5 +20,4 @@ pre-push:
     go-test:
       run: mise run test
     web-test:
-      run: pnpm test
-      dir: web
+      run: pnpm --dir web test
