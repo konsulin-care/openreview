@@ -1,0 +1,25 @@
+pre-commit:
+  parallel: true
+  commands:
+    go-fmt:
+      glob: "*.go"
+      run: go fmt {staged_files}
+      stage_fixed: true
+    go-lint:
+      glob: "*.go"
+      run: golangci-lint run --new-from-rev=HEAD
+    astro-check:
+      glob: "*.{astro,ts,tsx}"
+      run: pnpm exec astro check
+      dir: web
+
+pre-push:
+  parallel: true
+  commands:
+    go-lint:
+      run: golangci-lint run
+    go-test:
+      run: mise run test
+    web-test:
+      run: pnpm test
+      dir: web
