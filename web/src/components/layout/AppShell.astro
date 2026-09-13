@@ -1,0 +1,17 @@
+---
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<div class:list={["min-h-screen", className]}>
+  <slot name="header" />
+  <div class="flex">
+    <slot name="sidebar" />
+    <main class="mx-auto max-w-4xl flex-1 px-4 py-8">
+      <slot />
+    </main>
+  </div>
+</div>

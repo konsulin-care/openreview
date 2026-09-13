@@ -1,0 +1,46 @@
+---
+import Card from "../ui/Card.astro";
+import { getScreeningClasses } from "./papercard-utils";
+import type { ScreeningState } from "./papercard-utils";
+
+interface Props {
+  title: string;
+  authors?: string;
+  abstract?: string;
+  screeningState?: ScreeningState;
+  doi?: string;
+}
+
+const {
+  title,
+  authors,
+  abstract,
+  screeningState = "unscreened",
+  doi,
+} = Astro.props;
+
+const screeningClasses = getScreeningClasses(screeningState);
+---
+
+<Card>
+  <div class="flex items-start justify-between">
+    <h3 class="font-medium">{title}</h3>
+    <span class={screeningClasses}>{screeningState}</span>
+  </div>
+  {authors && (
+    <p class="mt-1 text-sm text-gray-500">{authors}</p>
+  )}
+  {abstract && (
+    <p class="mt-2 line-clamp-3 text-sm text-gray-600">{abstract}</p>
+  )}
+  {doi && (
+    <a
+      href={`https://doi.org/${doi}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="mt-2 inline-block text-xs text-blue-600 hover:underline"
+    >
+      DOI: {doi}
+    </a>
+  )}
+</Card>

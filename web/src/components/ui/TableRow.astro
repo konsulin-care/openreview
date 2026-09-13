@@ -1,0 +1,14 @@
+---
+import { TABLE_ROW_CLASSES } from "./table-utils";
+
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+const classes = className ? `${TABLE_ROW_CLASSES} ${className}` : TABLE_ROW_CLASSES;
+---
+
+<tr class={classes}>
+  <slot />
+</tr>

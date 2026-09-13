@@ -1,0 +1,28 @@
+---
+import { getSelectClasses } from "./select-utils";
+
+interface Props {
+  name: string;
+  label?: string;
+  options: Array<{ value: string; label: string }>;
+  value?: string;
+  disabled?: boolean;
+}
+
+const { name, label, options, value, disabled = false } = Astro.props;
+
+const selectClasses = getSelectClasses(disabled);
+---
+
+{label && (
+  <label for={name} class="mb-1 block text-sm font-medium text-gray-700">
+    {label}
+  </label>
+)}
+<select name={name} id={name} disabled={disabled} class={selectClasses}>
+  {options.map((opt) => (
+    <option value={opt.value} selected={opt.value === value}>
+      {opt.label}
+    </option>
+  ))}
+</select>

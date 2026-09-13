@@ -32,9 +32,10 @@ Thumbs.db
 
 # SQLite (local, never committed)
 *.sqlite
-*.sqlite-journal
-*.sqlite-wal
-*.sqlite-shm
+*.sqlite*
 
 # Cache (machine-specific, disposable)
 cache/
+
+# Archive
+**/.archive/**

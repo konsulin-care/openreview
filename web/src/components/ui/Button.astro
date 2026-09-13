@@ -1,0 +1,29 @@
+---
+import { getButtonClasses, shouldRenderAsLink } from "./button-utils";
+import type { ButtonVariant, ButtonSize } from "./button-utils";
+
+interface Props {
+  variant: ButtonVariant;
+  size?: ButtonSize;
+  disabled?: boolean;
+  loading?: boolean;
+  href?: string;
+}
+
+const { variant, size, disabled = false, loading = false, href } = Astro.props;
+
+const classes = getButtonClasses(variant, size, disabled, loading);
+const asLink = shouldRenderAsLink(href, disabled, loading);
+---
+
+{asLink ? (
+  <a href={href} class={classes}>
+    {loading && <span class="animate-spin">&#x21bb;</span>}
+    <slot />
+  </a>
+) : (
+  <button type="button" class={classes} disabled={disabled || loading}>
+    {loading && <span class="animate-spin">&#x21bb;</span>}
+    <slot />
+  </button>
+)}

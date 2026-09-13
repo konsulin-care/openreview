@@ -1,0 +1,25 @@
+---
+interface Props {
+  items: Array<{ label: string; href?: string }>;
+}
+
+const { items } = Astro.props;
+---
+
+<nav aria-label="Breadcrumb">
+  <ol class="flex items-center gap-1 text-sm text-gray-600">
+    {items.map((item, index) => {
+      const isLast = index === items.length - 1;
+      return (
+        <li class="flex items-center">
+          {index > 0 && <span class="mx-1 text-gray-400">/</span>}
+          {isLast ? (
+            <span class="text-gray-900">{item.label}</span>
+          ) : (
+            <a href={item.href} class="hover:text-blue-600">{item.label}</a>
+          )}
+        </li>
+      );
+    })}
+  </ol>
+</nav>

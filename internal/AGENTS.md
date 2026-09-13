@@ -47,6 +47,8 @@ It owns the HTTP API, event storage, database, and all business logic.
 - Bruno tests in docs/api/ must pass for each endpoint
 
 ## Testing
-- Unit tests: *_test.go alongside source
-- Integration tests: tests/ directory
-- Bruno collection executable in CI
+- Unit tests: `*_test.go` alongside source, table-driven preferred.
+- Integration tests: `tests/integration/` for cross-package scenarios.
+- Helpers: `internal/testutil/`, per-package `testdata/`.
+- Contract tests: Bruno collection in `docs/api/`.
+- Command: `go test -race -count=1 ./...`

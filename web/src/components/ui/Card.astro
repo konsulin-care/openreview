@@ -1,0 +1,17 @@
+---
+import { getCardClasses } from "./card-utils";
+import type { CardVariant, CardPadding } from "./card-utils";
+
+interface Props {
+  variant?: CardVariant;
+  padding?: CardPadding;
+}
+
+const { variant = "default", padding = "md" } = Astro.props;
+
+const classes = getCardClasses(variant, padding);
+---
+
+<div class={classes}>
+  <slot />
+</div>

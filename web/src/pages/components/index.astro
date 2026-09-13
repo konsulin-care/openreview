@@ -1,0 +1,120 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Badge from "../../components/ui/Badge.astro";
+import Card from "../../components/ui/Card.astro";
+import Button from "../../components/ui/Button.astro";
+import Breadcrumbs from "../../components/layout/Breadcrumbs.astro";
+import Callout from "../../components/docs/Callout.astro";
+import DocNav from "../../components/docs/DocNav.astro";
+import TableOfContents from "../../components/docs/TableOfContents.astro";
+import { getCollection } from "astro:content";
+
+const entries = await getCollection("components");
+
+const grouped = entries.reduce(
+  (acc, entry) => {
+    const cat = entry.data.category;
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(entry);
+    return acc;
+  },
+  {} as Record<string, typeof entries>,
+);
+---
+
+<BaseLayout title="Components — OpenReview">
+  <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Components" }]} />
+
+  <h1 class="mb-8 text-3xl font-bold">Components</h1>
+
+  {
+    Object.entries(grouped).map(([category, items]) => (
+      <section class="mb-8">
+        <h2 class="mb-4 text-xl font-semibold capitalize">{category}</h2>
+        <ul class="space-y-6">
+          {items.map((entry) => (
+            <li>
+              <Card variant="interactive">
+                <div class="flex items-center gap-3 mb-2">
+                  <h3 class="font-medium">{entry.data.name}</h3>
+                  <Badge variant={entry.data.status as "stable" | "experimental" | "planned"}>
+                    {entry.data.status}
+                  </Badge>
+                </div>
+                <p class="text-sm text-gray-600 mb-4">{entry.data.description}</p>
+
+                {/* Live preview based on component name */}
+                <div class="rounded border border-dashed border-gray-300 bg-gray-50 p-4">
+                  {entry.data.name === "Button" && (
+                    <div class="flex gap-3">
+                      <Button variant="primary">Primary</Button>
+                      <Button variant="secondary">Secondary</Button>
+                      <Button variant="ghost">Ghost</Button>
+                    </div>
+                  )}
+                  {entry.data.name === "Card" && (
+                    <Card padding="sm">
+                      <p class="text-sm">Card content</p>
+                    </Card>
+                  )}
+                  {entry.data.name === "Badge" && (
+                    <div class="flex gap-2">
+                      <Badge variant="stable">stable</Badge>
+                      <Badge variant="experimental">experimental</Badge>
+                      <Badge variant="planned">planned</Badge>
+                    </div>
+                  )}
+                  {entry.data.name === "Input" && (
+                    <div class="max-w-sm">
+                      <input type="text" placeholder="Text input" class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                    </div>
+                  )}
+                  {entry.data.name === "Select" && (
+                    <div class="max-w-sm">
+                      <select class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm">
+                        <option>Option 1</option>
+                        <option>Option 2</option>
+                      </select>
+                    </div>
+                  )}
+                  {entry.data.name === "Callout" && (
+                    <Callout type="info">This is an informational callout.</Callout>
+                  )}
+                  {entry.data.name === "Breadcrumbs" && (
+                    <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Components" }]} />
+                  )}
+                  {entry.data.name === "DocNav" && (
+                    <DocNav prev={{ title: "Previous", href: "#" }} next={{ title: "Next", href: "#" }} />
+                  )}
+                  {entry.data.name === "TableOfContents" && (
+                    <TableOfContents headings={[
+                      { depth: 2, text: "Section 1", slug: "section-1" },
+                      { depth: 3, text: "Subsection", slug: "subsection" },
+                      { depth: 2, text: "Section 2", slug: "section-2" },
+                    ]} />
+                  )}
+                  {entry.data.name === "ProjectCard" && (
+                    <p class="text-sm text-gray-500">Preview available when connected to engine</p>
+                  )}
+                  {entry.data.name === "PaperCard" && (
+                    <p class="text-sm text-gray-500">Preview available when connected to engine</p>
+                  )}
+                  {entry.data.name === "ScreeningControls" && (
+                    <div class="flex gap-3">
+                      <button type="button" class="rounded-md px-4 py-2 text-sm font-medium bg-green-100 text-green-800">Include</button>
+                      <button type="button" class="rounded-md px-4 py-2 text-sm font-medium bg-red-100 text-red-800">Exclude</button>
+                      <button type="button" class="rounded-md px-4 py-2 text-sm font-medium bg-yellow-100 text-yellow-800">Uncertain</button>
+                    </div>
+                  )}
+                  {(entry.data.name === "AppShell" || entry.data.name === "Header" || entry.data.name === "Modal" || entry.data.name === "Table" || entry.data.name === "CodeBlock") && (
+                    <p class="text-sm text-gray-500">Structural component — see page source for output</p>
+                  )}
+                </div>
+              </Card>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+</BaseLayout>

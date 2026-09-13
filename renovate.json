@@ -1,0 +1,23 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "schedule:weekly",
+    ":automergeMinor"
+  ],
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["^astro$", "@astrojs/.*"],
+      "groupName": "astro"
+    },
+    {
+      "matchPackagePatterns": ["^tailwindcss$", "@tailwindcss/.*"],
+      "groupName": "tailwindcss"
+    },
+    {
+      "matchPackagePatterns": ["github"],
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions"
+    }
+  ]
+}

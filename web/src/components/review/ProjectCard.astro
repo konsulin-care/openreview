@@ -1,0 +1,41 @@
+---
+import Card from "../ui/Card.astro";
+import { getStatusClasses } from "./projectcard-utils";
+import type { ProjectStatus } from "./projectcard-utils";
+
+interface Props {
+  name: string;
+  description?: string;
+  paperCount?: number;
+  status?: ProjectStatus;
+  lastModified?: string;
+}
+
+const {
+  name,
+  description,
+  paperCount,
+  status = "active",
+  lastModified,
+} = Astro.props;
+
+const statusClasses = getStatusClasses(status);
+---
+
+<Card variant="interactive">
+  <div class="flex items-start justify-between">
+    <h3 class="text-lg font-semibold">{name}</h3>
+    <span class={statusClasses}>{status}</span>
+  </div>
+  {description && (
+    <p class="mt-2 text-sm text-gray-600">{description}</p>
+  )}
+  <div class="mt-3 flex items-center gap-4 text-xs text-gray-500">
+    {paperCount !== undefined && (
+      <span>{paperCount} papers</span>
+    )}
+    {lastModified && (
+      <span>Modified {lastModified}</span>
+    )}
+  </div>
+</Card>
