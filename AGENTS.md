@@ -14,8 +14,15 @@ Go engine + Astro frontend, event-log as source of truth.
 
 ## Build & Run
 mise install          # install pinned tools
+mise run build        # build Go binary + Astro frontend
+mise run dev          # run Go + Astro dev servers concurrently
 mise run test         # run tests
-mise run app --web-ui # start full app
+
+## Testing Scope
+Test files are for Go and Astro code only:
+- Go: `*_test.go` files alongside source in `internal/`
+- Astro: `*.test.ts` files alongside components in `web/src/`
+Scripts in `scripts/` are not unit-tested; they are verified via `mise run build` and `mise run dev`.
 
 ## Coding Conventions
 - Conventional commits: feat:, fix:, refactor:, docs:, chore:

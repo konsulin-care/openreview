@@ -6,11 +6,9 @@ golangci-lint = "2.13"
 lefthook = "2.1.12"
 
 [tasks]
+build = { run = "scripts/build.sh", description = "Build Go binary and Astro frontend" }
+dev = { run = "scripts/dev.sh", description = "Run Go and Astro dev servers concurrently" }
 test = "go test ./..."
 lint = "golangci-lint run"
-build = "go build -o bin/openreview ./cmd/openreview"
-app = "mise run build && ./bin/openreview --web-ui"
-dev-backend = "go run ./cmd/openreview"
-dev-frontend = "cd web && pnpm dev"
 fmt = "go fmt ./..."
 hooks = "lefthook install"

@@ -54,5 +54,6 @@ Configurable endpoint: localhost, LAN, Tailscale.
 Client lives in web/src/lib/.
 
 ## Testing
-- Component tests alongside source
+- Component tests use vitest, placed alongside source files (e.g., `Button.test.ts` next to `Button.astro`)
 - Page tests for route rendering
+- Test command: `pnpm test` (runs vitest)

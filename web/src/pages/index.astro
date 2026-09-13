@@ -1,0 +1,35 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="OpenReview">
+  <section class="py-12">
+    <h1 class="mb-4 text-4xl font-bold">OpenReview</h1>
+    <p class="mb-8 text-lg text-gray-600">
+      Local-first systematic literature review screening.
+      Your data stays on your machine.
+    </p>
+
+    <div class="grid gap-6 sm:grid-cols-2">
+      <a href="/docs" class="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+        <h2 class="mb-2 text-xl font-semibold">Docs</h2>
+        <p class="text-gray-600">Setup guides, workflow documentation, and reference material.</p>
+      </a>
+
+      <a href="/blog" class="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+        <h2 class="mb-2 text-xl font-semibold">Blog</h2>
+        <p class="text-gray-600">Announcements, design decisions, and project updates.</p>
+      </a>
+
+      <a href="/faq" class="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+        <h2 class="mb-2 text-xl font-semibold">FAQ</h2>
+        <p class="text-gray-600">Answers to common questions about OpenReview.</p>
+      </a>
+
+      <a href="/components" class="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+        <h2 class="mb-2 text-xl font-semibold">Components</h2>
+        <p class="text-gray-600">UI component library and design system documentation.</p>
+      </a>
+    </div>
+  </section>
+</BaseLayout>
