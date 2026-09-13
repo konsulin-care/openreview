@@ -2,31 +2,25 @@
 name: "Button"
 description: "Primary action trigger with multiple variants"
 category: "ui"
-status: "planned"
+status: "stable"
 ---
 
 # Button Component
 
-The Button component triggers user actions. It is the most common interactive element in the interface.
+The Button component triggers user actions. It supports primary, secondary, and ghost variants with sm, md, and lg sizes.
 
-## Variants
+## Props
 
-- **Primary** — main call-to-action (e.g., "Submit Screening Decision")
-- **Secondary** — supplementary actions (e.g., "Cancel", "Back")
-- **Ghost** — minimal emphasis, used in toolbars and inline actions
+- `variant: 'primary' | 'secondary' | 'ghost'` — Visual style
+- `size?: 'sm' | 'md' | 'lg'` — Default: md
+- `disabled?: boolean` — Disables interaction
+- `loading?: boolean` — Shows spinner, disables interaction
+- `href?: string` — Renders as `<a>` instead of `<button>`
 
-## States
+## Usage
 
-- Default
-- Hover
-- Active/Pressed
-- Disabled
-- Loading (for async actions)
-
-## Usage Guidelines
-
-- Use primary for the most important action on the screen
-- Limit to one primary button per view to maintain visual hierarchy
-- Use descriptive labels: "Export Results" not "Click Here"
-- Disable instead of hiding when an action is temporarily unavailable
-- Show loading state for operations taking more than 300ms
+```astro
+<Button variant="primary" size="md">Submit</Button>
+<Button variant="secondary" href="/docs">Go to Docs</Button>
+<Button variant="ghost" loading={true}>Loading...</Button>
+```

@@ -1,0 +1,34 @@
+---
+import { getDecisionClasses } from "./screeningcontrols-utils";
+import type { ScreeningDecision } from "./screeningcontrols-utils";
+
+interface Props {
+  currentDecision?: ScreeningDecision;
+  disabled?: boolean;
+}
+
+const { currentDecision, disabled = false } = Astro.props;
+
+const decisions: Array<{ decision: ScreeningDecision; label: string; key: string }> = [
+  { decision: "include", label: "Include", key: "I" },
+  { decision: "exclude", label: "Exclude", key: "E" },
+  { decision: "uncertain", label: "Uncertain", key: "U" },
+];
+---
+
+<div class="flex items-center gap-3">
+  {decisions.map(({ decision, label, key }) => {
+    const isActive = currentDecision === decision;
+    const classes = getDecisionClasses(decision, isActive);
+    return (
+      <button
+        type="button"
+        class={classes}
+        disabled={disabled}
+      >
+        {label}
+        <kbd class="ml-1 rounded bg-white/50 px-1 text-xs opacity-60">{key}</kbd>
+      </button>
+    );
+  })}
+</div>

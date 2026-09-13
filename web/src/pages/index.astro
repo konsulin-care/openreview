@@ -1,5 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import Card from "../components/ui/Card.astro";
+import Button from "../components/ui/Button.astro";
 ---
 
 <BaseLayout title="OpenReview">
@@ -11,25 +13,41 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </p>
 
     <div class="grid gap-6 sm:grid-cols-2">
-      <a href="/docs" class="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md">
-        <h2 class="mb-2 text-xl font-semibold">Docs</h2>
-        <p class="text-gray-600">Setup guides, workflow documentation, and reference material.</p>
-      </a>
+      <Card variant="interactive" padding="lg">
+        <Button variant="ghost" href="/docs">
+          <div class="text-left">
+            <h2 class="mb-2 text-xl font-semibold">Docs</h2>
+            <p class="text-gray-600">Setup guides, workflow documentation, and reference material.</p>
+          </div>
+        </Button>
+      </Card>
 
-      <a href="/blog" class="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md">
-        <h2 class="mb-2 text-xl font-semibold">Blog</h2>
-        <p class="text-gray-600">Announcements, design decisions, and project updates.</p>
-      </a>
+      <Card variant="interactive" padding="lg">
+        <Button variant="ghost" href="/blog">
+          <div class="text-left">
+            <h2 class="mb-2 text-xl font-semibold">Blog</h2>
+            <p class="text-gray-600">Announcements, design decisions, and project updates.</p>
+          </div>
+        </Button>
+      </Card>
 
-      <a href="/faq" class="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md">
-        <h2 class="mb-2 text-xl font-semibold">FAQ</h2>
-        <p class="text-gray-600">Answers to common questions about OpenReview.</p>
-      </a>
+      <Card variant="interactive" padding="lg">
+        <Button variant="ghost" href="/faq">
+          <div class="text-left">
+            <h2 class="mb-2 text-xl font-semibold">FAQ</h2>
+            <p class="text-gray-600">Answers to common questions about OpenReview.</p>
+          </div>
+        </Button>
+      </Card>
 
-      <a href="/components" class="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md">
-        <h2 class="mb-2 text-xl font-semibold">Components</h2>
-        <p class="text-gray-600">UI component library and design system documentation.</p>
-      </a>
+      <Card variant="interactive" padding="lg">
+        <Button variant="ghost" href="/components">
+          <div class="text-left">
+            <h2 class="mb-2 text-xl font-semibold">Components</h2>
+            <p class="text-gray-600">UI component library and design system documentation.</p>
+          </div>
+        </Button>
+      </Card>
     </div>
   </section>
 </BaseLayout>

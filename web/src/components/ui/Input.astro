@@ -1,0 +1,43 @@
+---
+import { getInputClasses } from "./input-utils";
+
+interface Props {
+  type?: "text" | "email" | "password" | "number" | "search" | "tel" | "url" | "date" | "datetime-local" | "time";
+  name: string;
+  placeholder?: string;
+  label?: string;
+  error?: string;
+  disabled?: boolean;
+  value?: string;
+}
+
+const {
+  type = "text",
+  name,
+  placeholder,
+  label,
+  error,
+  disabled = false,
+  value,
+} = Astro.props;
+
+const inputClasses = getInputClasses({ hasError: !!error, disabled });
+---
+
+{label && (
+  <label for={name} class="mb-1 block text-sm font-medium text-gray-700">
+    {label}
+  </label>
+)}
+<input
+  type={type}
+  name={name}
+  id={name}
+  placeholder={placeholder}
+  value={value}
+  disabled={disabled}
+  class={inputClasses}
+/>
+{error && (
+  <p class="mt-1 text-sm text-red-600">{error}</p>
+)}

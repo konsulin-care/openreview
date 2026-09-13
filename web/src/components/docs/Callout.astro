@@ -1,0 +1,20 @@
+---
+import { getCalloutClasses, getCalloutLabel } from "./callout-utils";
+import type { CalloutType } from "./callout-utils";
+
+interface Props {
+  type: CalloutType;
+}
+
+const { type } = Astro.props;
+
+const classes = getCalloutClasses(type);
+const label = getCalloutLabel(type);
+---
+
+<div class={classes}>
+  <p class="mb-1 font-semibold text-sm">{label}</p>
+  <div class="text-sm">
+    <slot />
+  </div>
+</div>
