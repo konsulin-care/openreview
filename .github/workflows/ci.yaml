@@ -72,6 +72,8 @@ jobs:
       - run: pnpm install --dir web
       - run: pnpm exec astro check
         working-directory: web
+      - run: pnpm build
+        working-directory: web
       - run: pnpm test
         working-directory: web
 
