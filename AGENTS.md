@@ -18,11 +18,33 @@ mise run build        # build Go binary + Astro frontend
 mise run dev          # run Go + Astro dev servers concurrently
 mise run test         # run tests
 
-## Testing Scope
-Test files are for Go and Astro code only:
-- Go: `*_test.go` files alongside source in `internal/`
-- Astro: `*.test.ts` files alongside components in `web/src/`
-Scripts in `scripts/` are not unit-tested; they are verified via `mise run build` and `mise run dev`.
+## Testing
+
+### Test Categories
+| Category | Location | When to write |
+|----------|----------|---------------|
+| Unit (pure logic) | Co-located: `*_test.go` / `*.test.ts` next to source | Every new exported function or utility |
+| Build verification | Co-located `*.test.ts` reading `dist/` | UI components where compiled HTML is the contract |
+| Integration | `tests/integration/` | Cross-package or engine + frontend |
+| Contract | `docs/api/` (Bruno collection) | Every API endpoint |
+| Build scripts | `tests/*.sh` | CI verification only, not logic tests |
+
+### Shared Test Assets
+- Go: `internal/testutil/`, per-package `testdata/`
+- TS: `web/src/test/` (helpers, fixtures, mocks)
+- Cross-system: `tests/fixtures/`
+
+### Agent Rules
+- Write unit tests for every new exported function or utility.
+- Write build verification tests for UI components only when the compiled HTML output is the contract.
+- Mock external I/O in unit tests; use real I/O in integration tests.
+- Do NOT write tests for: scripts, build config, content files, pages.
+- Do NOT duplicate boilerplate — use shared helpers from `web/src/test/`.
+
+### Commands
+`mise run test` (runs Go + Astro tests)
+Go only: `go test -race -count=1 ./...`
+Astro only: `pnpm --dir web test`
 
 ## Coding Conventions
 - Conventional commits: feat:, fix:, refactor:, docs:, chore:
