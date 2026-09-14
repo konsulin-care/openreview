@@ -63,6 +63,30 @@ export function parseEndpoint(raw: string | null): string {
 
 // --- Async state machine ---
 
+import { EngineClient } from "./engine-client";
+
+/**
+ * Get the parsed endpoint for the engine client.
+ * @returns validated endpoint URL
+ */
+function getEngineEndpoint(): string {
+  return parseEndpoint(getConfiguredEndpoint());
+}
+
+/** Lazy-initialized engine client. */
+let engineClient: EngineClient | null = null;
+
+/**
+ * Get or create the engine client singleton.
+ * @returns configured EngineClient instance
+ */
+function getClient(): EngineClient {
+  if (!engineClient) {
+    engineClient = new EngineClient({ getEndpoint: getEngineEndpoint });
+  }
+  return engineClient;
+}
+
 /**
  * Resolve the current engine state by checking configuration then health.
  * @returns the resolved EngineState
@@ -70,11 +94,9 @@ export function parseEndpoint(raw: string | null): string {
 export async function resolveEngineState(): Promise<EngineState> {
   if (!isConfigured()) return "unconfigured";
 
-  const endpoint = parseEndpoint(getConfiguredEndpoint());
-
   try {
-    const response = await fetch(`${endpoint}/api/v1/health`);
-    return response.ok ? "healthy" : "unhealthy";
+    await getClient().getHealth();
+    return "healthy";
   } catch {
     return "unhealthy";
   }

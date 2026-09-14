@@ -174,7 +174,7 @@ describe("resolveEngineState", () => {
 
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({ ok: true })
+      vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: "ok" }), { status: 200 }))
     );
 
     const state = await resolveEngineState();
@@ -201,7 +201,7 @@ describe("resolveEngineState", () => {
 
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({ ok: false, status: 503 })
+      vi.fn().mockResolvedValue(new Response("Service Unavailable", { status: 503 }))
     );
 
     const state = await resolveEngineState();
