@@ -329,7 +329,7 @@ function renderInitStep(): string {
  * Build the full onboarding wizard HTML.
  * @param startStep — zero-based index of the step to start at
  */
-function renderOnboardingWizard(startStep: number): string {
+export function renderOnboardingWizard(startStep: number): string {
   const os = typeof navigator !== "undefined" ? detectOS(navigator.userAgent) : "linux";
   const stepLabels = ONBOARDING_STEPS.map((s) => s.label);
   const stepper = renderStepper(stepLabels, startStep);
