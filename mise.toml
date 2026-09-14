@@ -4,11 +4,13 @@ node = "26"
 pnpm = "12"
 golangci-lint = "2.13"
 lefthook = "2.1.12"
+"npm:@usebruno/cli" = "4.0.0"
 
 [tasks]
 build = { run = "scripts/build.sh", description = "Build Go binary and Astro frontend" }
 dev = { run = "scripts/dev.sh", description = "Run Go and Astro dev servers concurrently" }
 test = "go test ./..."
+test-api = { run = "scripts/test-api.sh", description = "Run Bruno API contract tests" }
 lint = "golangci-lint run"
 fmt = "go fmt ./..."
 hooks = "lefthook install"

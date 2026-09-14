@@ -1,2 +1,5 @@
-# Bruno environment: local development
-# Base URL: http://127.0.0.1:PORT
+name: local
+variables:
+  - name: baseUrl
+    value: http://localhost:1234
+    type: default

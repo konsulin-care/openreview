@@ -3,7 +3,7 @@ pre-commit:
   commands:
     go-fmt:
       glob: "*.go"
-      run: go fmt {staged_files}
+      run: gofmt -l -w {staged_files}
       stage_fixed: true
     go-lint:
       glob: "*.go"
@@ -19,5 +19,7 @@ pre-push:
       run: golangci-lint run
     go-test:
       run: mise run test
+    api-contract:
+      run: mise run test-api
     web-test:
       run: pnpm --dir web test
