@@ -11,6 +11,7 @@
 export type EngineState =
   | "checking"
   | "unconfigured"
+  | "not-initialized"
   | "healthy"
   | "unhealthy";
 
@@ -24,6 +25,12 @@ export const STORAGE_KEY_ENDPOINT = "openreview:engineEndpoint";
 
 /** Default engine endpoint (matches Go engine default port). */
 export const DEFAULT_ENDPOINT = "http://127.0.0.1:1234";
+
+/** Maximum number of health check retries. */
+const MAX_RETRIES = 5;
+
+/** Base delay in ms for exponential backoff. */
+const BASE_DELAY_MS = 500;
 
 // --- Pure functions ---
 
@@ -61,6 +68,14 @@ export function parseEndpoint(raw: string | null): string {
   return trimmed;
 }
 
+/**
+ * Sleep for the specified number of milliseconds.
+ * @param ms — milliseconds to wait
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 // --- Async state machine ---
 
 import { EngineClient } from "./engine-client";
@@ -88,18 +103,34 @@ function getClient(): EngineClient {
 }
 
 /**
- * Resolve the current engine state by checking configuration then health.
+ * Check engine health with exponential backoff retry.
  * @returns the resolved EngineState
  */
 export async function resolveEngineState(): Promise<EngineState> {
   if (!isConfigured()) return "unconfigured";
 
-  try {
-    await getClient().getHealth();
-    return "healthy";
-  } catch {
-    return "unhealthy";
+  const client = getClient();
+
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const health = await client.getHealth();
+      if (health.status === "ok") {
+        // Health OK — now check engine state
+        const status = await client.getStatus();
+        if (status.state === "NEW") {
+          return "not-initialized";
+        }
+        return "healthy";
+      }
+    } catch {
+      // Health check failed — retry with backoff
+      if (attempt < MAX_RETRIES - 1) {
+        await sleep(BASE_DELAY_MS * Math.pow(2, attempt));
+      }
+    }
   }
+
+  return "unhealthy";
 }
 
 // --- View registry ---
@@ -113,11 +144,14 @@ export const VIEWS: Record<EngineState, () => string> = {
     '<div class="flex items-center justify-center py-12"><div class="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div></div>',
 
   unconfigured: () =>
-    '<section class="py-12 text-center"><h1 class="mb-4 text-3xl font-bold">Welcome to OpenReview</h1><p class="mb-8 text-gray-600">Set up your local review engine to get started.</p></section>',
+    '<section class="py-12 text-center"><h1 class="mb-4 text-3xl font-bold">Welcome to OpenReview</h1><p class="mb-8 text-gray-600">Set up your local review engine to get started.</p><p class="text-gray-500">Run <code class="rounded bg-gray-100 px-2 py-1">mise run app</code> to start the engine.</p></section>',
+
+  "not-initialized": () =>
+    '<section class="py-12 text-center"><h1 class="mb-4 text-3xl font-bold">Engine Not Initialized</h1><p class="mb-8 text-gray-600">The engine is running but has not been initialized.</p><a href="/initialize" class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Initialize Engine</a></section>',
 
   healthy: () =>
     '<section class="py-12"><h1 class="mb-4 text-3xl font-bold">Dashboard</h1><p class="text-gray-600">Your review projects will appear here.</p></section>',
 
   unhealthy: () =>
-    '<section class="py-12 text-center"><h1 class="mb-4 text-3xl font-bold">Engine Unavailable</h1><p class="mb-8 text-gray-600">Could not reach the review engine. Please check your configuration.</p></section>',
+    '<section class="py-12 text-center"><h1 class="mb-4 text-3xl font-bold">Engine Unavailable</h1><p class="mb-8 text-gray-600">Could not reach the review engine. Please check your configuration.</p><p class="text-gray-500">Run <code class="rounded bg-gray-100 px-2 py-1">mise run app</code> to start the engine.</p></section>',
 };

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   isConfigured,
   getConfiguredEndpoint,
@@ -169,20 +169,25 @@ describe("resolveEngineState", () => {
   });
 
   it("returns 'healthy' when configured and health check succeeds", async () => {
+    vi.useFakeTimers();
     localStorage.setItem(STORAGE_KEY_CONFIGURED, "true");
     localStorage.setItem(STORAGE_KEY_ENDPOINT, "http://127.0.0.1:1234");
 
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: "ok" }), { status: 200 }))
-    );
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "ok" }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ state: "READY", version: "0.1.0" }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
 
-    const state = await resolveEngineState();
+    const statePromise = resolveEngineState();
+    await vi.advanceTimersByTimeAsync(10000);
+    const state = await statePromise;
     expect(state).toBe("healthy");
-    expect(fetch).toHaveBeenCalledWith("http://127.0.0.1:1234/api/v1/health");
+    expect(fetchMock).toHaveBeenCalledWith("http://127.0.0.1:1234/api/v1/health");
+    vi.useRealTimers();
   });
 
   it("returns 'unhealthy' when configured but health check fails", async () => {
+    vi.useFakeTimers();
     localStorage.setItem(STORAGE_KEY_CONFIGURED, "true");
     localStorage.setItem(STORAGE_KEY_ENDPOINT, "http://127.0.0.1:1234");
 
@@ -191,11 +196,15 @@ describe("resolveEngineState", () => {
       vi.fn().mockRejectedValue(new Error("network error"))
     );
 
-    const state = await resolveEngineState();
+    const statePromise = resolveEngineState();
+    await vi.advanceTimersByTimeAsync(10000);
+    const state = await statePromise;
     expect(state).toBe("unhealthy");
+    vi.useRealTimers();
   });
 
   it("returns 'unhealthy' when configured but fetch returns not ok", async () => {
+    vi.useFakeTimers();
     localStorage.setItem(STORAGE_KEY_CONFIGURED, "true");
     localStorage.setItem(STORAGE_KEY_ENDPOINT, "http://127.0.0.1:1234");
 
@@ -204,7 +213,10 @@ describe("resolveEngineState", () => {
       vi.fn().mockResolvedValue(new Response("Service Unavailable", { status: 503 }))
     );
 
-    const state = await resolveEngineState();
+    const statePromise = resolveEngineState();
+    await vi.advanceTimersByTimeAsync(10000);
+    const state = await statePromise;
     expect(state).toBe("unhealthy");
+    vi.useRealTimers();
   });
 });
