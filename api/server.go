@@ -2,6 +2,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -43,4 +44,17 @@ func (s *Server) Addr() string {
 // Handler exposes the underlying http.Handler for testing.
 func (s *Server) Handler() http.Handler {
 	return s.httpServer.Handler
+}
+
+// requireReady returns 503 if the app state is not READY.
+func requireReady(a *app.App, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if a.State != app.StateReady {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "not initialized"})
+			return
+		}
+		next(w, r)
+	}
 }
