@@ -13,9 +13,11 @@ describe("header navigation (build verification)", () => {
     expect(html).toContain("Dashboard");
   });
 
-  it("contains Settings link to /settings", () => {
-    expect(html).toContain('href="/settings"');
-    expect(html).toContain("Settings");
+  it("does not contain Settings link in header", () => {
+    // Settings moved to dashboard sidebar
+    const headerEnd = html.indexOf('</header>');
+    const headerHtml = headerEnd > 0 ? html.substring(0, headerEnd) : html;
+    expect(headerHtml).not.toContain('href="/settings"');
   });
 
   it("still contains Docs link", () => {

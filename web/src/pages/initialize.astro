@@ -81,7 +81,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
           const result = await response.json();
           localStorage.setItem("openreview:actorId", result.actor_id);
-          window.location.href = "/dashboard";
+          localStorage.setItem("openreview:actorName", name);
+          localStorage.setItem("openreview:actorEmail", email);
+          window.location.href = "/";
         } catch (err) {
           if (errorDiv) {
             errorDiv.textContent = err instanceof Error ? err.message : "Initialization failed.";

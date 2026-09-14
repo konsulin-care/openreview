@@ -13,4 +13,5 @@ test = { run = "scripts/test.sh", description = "Run tests (--backend|--frontend
 bruno = { run = "scripts/bruno.sh", description = "Run Bruno API contract tests" }
 lint = "golangci-lint run"
 fmt = "go fmt ./..."
+init = { run = "scripts/init.sh", description = "Install all project dependencies" }
 hooks = "lefthook install"

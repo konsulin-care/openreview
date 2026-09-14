@@ -20,12 +20,6 @@ import Breadcrumbs from "../components/layout/Breadcrumbs.astro";
       const state = await resolveEngineState();
       console.log("[OpenReview] engine state:", state);
 
-      // Redirect to /initialize if engine is not initialized
-      if (state === "not-initialized") {
-        window.location.href = "/initialize";
-        return;
-      }
-
       // Update breadcrumb visibility
       const breadcrumb = document.getElementById("breadcrumb-home");
       if (breadcrumb) {

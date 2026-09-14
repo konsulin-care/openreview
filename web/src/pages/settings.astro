@@ -6,8 +6,105 @@ import Breadcrumbs from "../components/layout/Breadcrumbs.astro";
 <BaseLayout title="Settings — OpenReview">
   <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Settings" }]} />
 
-  <section class="py-12">
-    <h1 class="mb-4 text-3xl font-bold">Settings</h1>
-    <p class="text-gray-600">Settings page — coming soon</p>
+  <section class="mx-auto max-w-md py-12">
+    <h1 class="mb-2 text-3xl font-bold">Settings</h1>
+    <p class="mb-8 text-gray-600">Configure your engine connection.</p>
+
+    <form id="settings-form" class="space-y-4">
+      <div>
+        <label for="endpoint" class="mb-1 block text-sm font-medium text-gray-700">Engine Endpoint</label>
+        <input
+          type="text"
+          id="endpoint"
+          name="endpoint"
+          required
+          class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          placeholder="http://127.0.0.1:1234"
+        />
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-medium text-gray-700">Actor</label>
+        <div class="rounded border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600">
+          <span id="actor-name">—</span> &lt;<span id="actor-email">—</span>&gt;
+        </div>
+      </div>
+
+      <div id="connection-status" class="hidden rounded p-3 text-sm"></div>
+
+      <div class="flex gap-2">
+        <button type="button" id="test-btn" class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+          Test connection
+        </button>
+        <button type="submit" class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">
+          Save
+        </button>
+      </div>
+    </form>
+
+    <div class="mt-6">
+      <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to dashboard</a>
+    </div>
   </section>
+
+  <script>
+    const ENDPOINT_KEY = "openreview:engineEndpoint";
+    const CONFIGURED_KEY = "openreview:engineConfigured";
+    const ACTOR_NAME_KEY = "openreview:actorName";
+    const ACTOR_EMAIL_KEY = "openreview:actorEmail";
+
+    const endpointInput = document.getElementById("endpoint") as HTMLInputElement;
+    const actorName = document.getElementById("actor-name") as HTMLElement;
+    const actorEmail = document.getElementById("actor-email") as HTMLElement;
+    const statusDiv = document.getElementById("connection-status") as HTMLElement;
+    const testBtn = document.getElementById("test-btn") as HTMLButtonElement;
+    const form = document.getElementById("settings-form") as HTMLFormElement;
+
+    // Load saved values
+    endpointInput.value = localStorage.getItem(ENDPOINT_KEY) || "http://127.0.0.1:1234";
+    actorName.textContent = localStorage.getItem(ACTOR_NAME_KEY) || "—";
+    actorEmail.textContent = localStorage.getItem(ACTOR_EMAIL_KEY) || "—";
+
+    function showStatus(ok: boolean, msg: string) {
+      statusDiv.className = `rounded p-3 text-sm ${ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`;
+      statusDiv.textContent = msg;
+      statusDiv.classList.remove("hidden");
+    }
+
+    testBtn.addEventListener("click", async () => {
+      const endpoint = endpointInput.value.trim();
+      if (!endpoint) {
+        showStatus(false, "Please enter an endpoint URL.");
+        return;
+      }
+
+      testBtn.disabled = true;
+      testBtn.textContent = "Testing…";
+
+      try {
+        const res = await fetch(`${endpoint}/api/v1/health`);
+        if (res.ok) {
+          const data = await res.json();
+          showStatus(true, `Engine reachable — status: ${data.status}`);
+        } else {
+          showStatus(false, `Engine returned ${res.status}`);
+        }
+      } catch {
+        showStatus(false, "Cannot reach engine — is it running?");
+      } finally {
+        testBtn.disabled = false;
+        testBtn.textContent = "Test connection";
+      }
+    });
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const endpoint = endpointInput.value.trim();
+      if (!endpoint) return;
+
+      localStorage.setItem(ENDPOINT_KEY, endpoint);
+      localStorage.setItem(CONFIGURED_KEY, "true");
+      showStatus(true, "Settings saved.");
+    });
+  </script>
 </BaseLayout>

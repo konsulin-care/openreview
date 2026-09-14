@@ -20,6 +20,7 @@ func NewServer(a *app.App, cfg *config.Config) *Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/health", HealthHandler())
 	mux.HandleFunc("/api/v1/status", StatusHandler(a))
+	mux.HandleFunc("/api/v1/preflight", PreflightHandler())
 	mux.HandleFunc("/api/v1/initialize", InitializeHandler(a))
 
 	addr := fmt.Sprintf("%s:%d", cfg.BindAddr, cfg.Port)

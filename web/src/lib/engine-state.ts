@@ -133,25 +133,257 @@ export async function resolveEngineState(): Promise<EngineState> {
   return "unhealthy";
 }
 
+// --- OS detection ---
+
+/** Supported operating systems for onboarding instructions. */
+export type OS = "windows" | "macos" | "linux";
+
+/**
+ * Detect OS from user agent string.
+ * Defaults to linux for unknown or empty strings.
+ * @param userAgent — navigator.userAgent value
+ * @returns detected OS
+ */
+export function detectOS(userAgent: string): OS {
+  if (!userAgent) return "linux";
+  const ua = userAgent.toLowerCase();
+  if (ua.includes("windows")) return "windows";
+  if (ua.includes("macintosh") || ua.includes("mac os")) return "macos";
+  return "linux";
+}
+
+// --- Stepper rendering ---
+
+/** Step definition for the onboarding stepper. */
+interface StepDef {
+  label: string;
+  key: string;
+}
+
+/** Onboarding step definitions. */
+const ONBOARDING_STEPS: StepDef[] = [
+  { label: "Install", key: "install" },
+  { label: "Setup", key: "setup" },
+  { label: "Connect", key: "connect" },
+  { label: "Initialize", key: "init" },
+];
+
+/**
+ * Render the stepper progress indicator HTML.
+ * @param steps — array of step labels
+ * @param activeIndex — zero-based index of the active step
+ * @returns HTML string for the stepper
+ */
+export function renderStepper(steps: string[], activeIndex: number): string {
+  const items = steps
+    .map((label, i) => {
+      let dotClass: string;
+      if (i < activeIndex) {
+        dotClass = "bg-green-500"; // completed
+      } else if (i === activeIndex) {
+        dotClass = "border-2 border-blue-600 bg-white"; // active ring
+      } else {
+        dotClass = "bg-gray-300"; // pending
+      }
+      const textClass = i === activeIndex ? "text-blue-600 font-medium" : i < activeIndex ? "text-green-600" : "text-gray-400";
+      return `<li class="flex items-center gap-2">
+        <span class="h-3 w-3 rounded-full ${dotClass}"></span>
+        <span class="text-sm ${textClass}">${label}</span>
+      </li>`;
+    })
+    .join("");
+
+  return `<ol class="flex items-center gap-4">${items}</ol>`;
+}
+
+// --- Onboarding step content ---
+
+/**
+ * Render Step 1: Install tools.
+ * @param os — detected operating system
+ */
+function renderInstallStep(os: OS): string {
+  const commands: Record<OS, { label: string; cmd: string }[]> = {
+    windows: [
+      { label: "Git", cmd: "winget install Git.Git" },
+      { label: "mise", cmd: "winget install jdx.mise" },
+    ],
+    macos: [
+      { label: "Git", cmd: "brew install git" },
+      { label: "mise", cmd: "brew install mise" },
+    ],
+    linux: [
+      { label: "Git", cmd: "sudo apt install git" },
+      { label: "mise", cmd: "curl https://mise.run | sh" },
+    ],
+  };
+
+  const tabs: OS[] = ["windows", "macos", "linux"];
+  const tabButtons = tabs
+    .map(
+      (t) =>
+        `<button data-tab="${t}" class="px-3 py-1 text-sm rounded-md ${t === os ? "bg-blue-100 text-blue-700" : "text-gray-500 hover:bg-gray-100"}">${t === "windows" ? "Windows" : t === "macos" ? "macOS" : "Linux"}</button>`
+    )
+    .join("");
+
+  const osSections = tabs
+    .map((t) => {
+      const cmds = commands[t]
+        .map(
+          (c) =>
+            `<div class="flex items-center gap-2">
+              <code class="flex-1 rounded bg-gray-100 px-3 py-2 text-sm font-mono" data-cmd>${c.cmd}</code>
+              <button data-copy class="shrink-0 rounded bg-gray-200 px-2 py-1 text-xs text-gray-600 hover:bg-gray-300">Copy</button>
+            </div>`
+        )
+        .join("");
+      return `<div data-os-section="${t}" class="space-y-2 ${t !== os ? "hidden" : ""}">${cmds}</div>`;
+    })
+    .join("");
+
+  return `
+    <div class="space-y-4">
+      <p class="text-sm text-gray-600">Install the required tools for your operating system.</p>
+      <div class="flex gap-1" data-os-tabs>${tabButtons}</div>
+      ${osSections}
+      <div class="flex items-center justify-between pt-2">
+        <button data-skip class="text-sm text-gray-500 hover:text-gray-700">I already have these installed</button>
+        <button data-next class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">Next</button>
+      </div>
+    </div>`;
+}
+
+/**
+ * Render Step 2: Clone & setup.
+ * @param os — detected operating system
+ */
+function renderSetupStep(os: OS): string {
+  const terminalHint: Record<OS, string> = {
+    windows: "Start menu \u2192 PowerShell",
+    macos: "Spotlight \u223C Terminal",
+    linux: "Applications \u2192 Terminal",
+  };
+
+  const commands = [
+    `# Open a terminal (${terminalHint[os]})`,
+    "git clone https://github.com/konsulin-care/openreview",
+    "cd openreview",
+    "mise install && mise run init",
+    "mise run dev",
+  ];
+
+  const codeBlock = commands.join("\n");
+
+  return `
+    <div class="space-y-4">
+      <p class="text-sm text-gray-600">Clone the repository and start the engine.</p>
+      <div class="relative">
+        <pre class="overflow-x-auto rounded bg-gray-900 p-4 text-sm text-gray-100 font-mono">${codeBlock}</pre>
+        <button data-copy-all class="absolute top-2 right-2 rounded bg-gray-700 px-2 py-1 text-xs text-gray-300 hover:bg-gray-600">Copy all</button>
+      </div>
+      <p class="text-xs text-gray-500">Waiting for engine to start…</p>
+    </div>`;
+}
+
+/**
+ * Render Step 3: Connect.
+ */
+function renderConnectStep(): string {
+  return `
+    <div class="space-y-4">
+      <p class="text-sm text-gray-600">Enter your engine endpoint URL.</p>
+      <div class="flex gap-2">
+        <input type="text" data-endpoint value="http://127.0.0.1:1234" class="flex-1 rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+        <button data-test-connection class="rounded bg-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-300">Test</button>
+      </div>
+      <div data-connection-status class="hidden text-sm"></div>
+      <div class="flex justify-end">
+        <button data-save class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">Save & Continue</button>
+      </div>
+    </div>`;
+}
+
+/**
+ * Render Step 4: Initialize.
+ */
+function renderInitStep(): string {
+  return `
+    <div class="space-y-4">
+      <p class="text-sm text-gray-600">Set up your reviewer profile.</p>
+      <div>
+        <label for="actor-name" class="mb-1 block text-sm font-medium text-gray-700">Name</label>
+        <input type="text" id="actor-name" required class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Your name" />
+      </div>
+      <div>
+        <label for="actor-email" class="mb-1 block text-sm font-medium text-gray-700">Email</label>
+        <input type="email" id="actor-email" required class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="you@example.com" />
+      </div>
+      <div data-init-error class="hidden rounded bg-red-50 p-3 text-sm text-red-700"></div>
+      <div class="flex justify-end">
+        <button data-init-submit class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">Initialize</button>
+      </div>
+    </div>`;
+}
+
+/**
+ * Build the full onboarding wizard HTML.
+ * @param startStep — zero-based index of the step to start at
+ */
+function renderOnboardingWizard(startStep: number): string {
+  const os = typeof navigator !== "undefined" ? detectOS(navigator.userAgent) : "linux";
+  const stepLabels = ONBOARDING_STEPS.map((s) => s.label);
+  const stepper = renderStepper(stepLabels, startStep);
+
+  const steps = [
+    renderInstallStep(os),
+    renderSetupStep(os),
+    renderConnectStep(),
+    renderInitStep(),
+  ];
+
+  const activeCard = `<div data-wizard-card class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">${steps[startStep]}</div>`;
+
+  return `
+    <section class="mx-auto max-w-2xl py-12">
+      <h1 class="mb-2 text-3xl font-bold">Welcome to OpenReview</h1>
+      <p class="mb-6 text-gray-600">Set up your local review engine to get started.</p>
+      <div class="mb-6">${stepper}</div>
+      <div data-wizard-card-container>${activeCard}</div>
+    </section>`;
+}
+
 // --- View registry ---
 
 /**
  * Map from engine state to a render function returning HTML string.
- * Each function is a stub — will be replaced with real UI in later phases.
  */
 export const VIEWS: Record<EngineState, () => string> = {
   checking: () =>
     '<div class="flex items-center justify-center py-12"><div class="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div></div>',
 
-  unconfigured: () =>
-    '<section class="py-12 text-center"><h1 class="mb-4 text-3xl font-bold">Welcome to OpenReview</h1><p class="mb-8 text-gray-600">Set up your local review engine to get started.</p><p class="text-gray-500">Run <code class="rounded bg-gray-100 px-2 py-1">mise run app</code> to start the engine.</p></section>',
+  unconfigured: () => renderOnboardingWizard(0),
 
-  "not-initialized": () =>
-    '<section class="py-12 text-center"><h1 class="mb-4 text-3xl font-bold">Engine Not Initialized</h1><p class="mb-8 text-gray-600">The engine is running but has not been initialized.</p><a href="/initialize" class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Initialize Engine</a></section>',
+  "not-initialized": () => renderOnboardingWizard(3),
 
   healthy: () =>
-    '<section class="py-12"><h1 class="mb-4 text-3xl font-bold">Dashboard</h1><p class="text-gray-600">Your review projects will appear here.</p></section>',
+    `<div class="flex min-h-[calc(100vh-60px)]">
+      <aside class="w-60 shrink-0 border-r border-gray-200 bg-white px-3 py-4 flex flex-col">
+        <nav class="flex flex-col gap-1 text-sm">
+          <!-- P9: project list goes here -->
+        </nav>
+        <div class="mt-auto border-t border-gray-200 pt-3">
+          <a href="/settings" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-blue-600">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            Settings
+          </a>
+        </div>
+      </aside>
+      <main class="flex-1 px-6 py-8">
+        <h1 class="mb-4 text-3xl font-bold">Dashboard</h1>
+        <p class="text-gray-600">Your review projects will appear here.</p>
+      </main>
+    </div>`,
 
   unhealthy: () =>
-    '<section class="py-12 text-center"><h1 class="mb-4 text-3xl font-bold">Engine Unavailable</h1><p class="mb-8 text-gray-600">Could not reach the review engine. Please check your configuration.</p><p class="text-gray-500">Run <code class="rounded bg-gray-100 px-2 py-1">mise run app</code> to start the engine.</p></section>',
+    '<section class="py-12 text-center"><h1 class="mb-4 text-3xl font-bold">Engine Unavailable</h1><p class="mb-8 text-gray-600">Could not reach the review engine. Please check your configuration.</p><p class="text-gray-500">Run <code class="rounded bg-gray-100 px-2 py-1">mise run dev</code> to start the engine.</p></section>',
 };

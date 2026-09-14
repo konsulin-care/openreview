@@ -8,6 +8,9 @@ import {
   STORAGE_KEY_CONFIGURED,
   STORAGE_KEY_ENDPOINT,
   DEFAULT_ENDPOINT,
+  detectOS,
+  renderStepper,
+  type OS,
 } from "./engine-state";
 
 // --- localStorage mocks ---
@@ -122,10 +125,56 @@ describe("getConfiguredEndpoint", () => {
   });
 });
 
+describe("detectOS", () => {
+  it("returns 'windows' for Windows user agent", () => {
+    expect(detectOS("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")).toBe("windows");
+  });
+
+  it("returns 'macos' for macOS user agent", () => {
+    expect(detectOS("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)")).toBe("macos");
+  });
+
+  it("returns 'linux' for Linux user agent", () => {
+    expect(detectOS("Mozilla/5.0 (X11; Linux x86_64)")).toBe("linux");
+  });
+
+  it("defaults to linux for unknown user agent", () => {
+    expect(detectOS("SomeBot/1.0")).toBe("linux");
+  });
+
+  it("defaults to linux for empty string", () => {
+    expect(detectOS("")).toBe("linux");
+  });
+});
+
+describe("renderStepper", () => {
+  const steps = ["Install", "Setup", "Connect", "Initialize"];
+
+  it("marks active step with blue ring class", () => {
+    const html = renderStepper(steps, 1);
+    expect(html).toContain("Install");
+    expect(html).toContain("Setup");
+    expect(html).toContain("Connect");
+    expect(html).toContain("Initialize");
+  });
+
+  it("renders all step labels", () => {
+    const html = renderStepper(steps, 0);
+    for (const step of steps) {
+      expect(html).toContain(step);
+    }
+  });
+
+  it("returns non-empty string", () => {
+    expect(renderStepper(steps, 0).length).toBeGreaterThan(0);
+  });
+});
+
 describe("VIEWS", () => {
-  it("has entries for all 4 states", () => {
+  it("has entries for all 5 states", () => {
     expect(VIEWS).toHaveProperty("checking");
     expect(VIEWS).toHaveProperty("unconfigured");
+    expect(VIEWS).toHaveProperty("not-initialized");
     expect(VIEWS).toHaveProperty("healthy");
     expect(VIEWS).toHaveProperty("unhealthy");
   });
@@ -134,12 +183,24 @@ describe("VIEWS", () => {
     expect(VIEWS.checking().length).toBeGreaterThan(0);
   });
 
-  it("unconfigured returns non-empty string", () => {
-    expect(VIEWS.unconfigured().length).toBeGreaterThan(0);
+  it("unconfigured returns onboarding wizard HTML", () => {
+    const html = VIEWS.unconfigured();
+    expect(html.length).toBeGreaterThan(0);
+    expect(html).toContain("Install");
   });
 
-  it("healthy returns non-empty string", () => {
-    expect(VIEWS.healthy().length).toBeGreaterThan(0);
+  it("not-initialized returns onboarding wizard at step 4", () => {
+    const html = VIEWS["not-initialized"]();
+    expect(html.length).toBeGreaterThan(0);
+    expect(html).toContain("Initialize");
+  });
+
+  it("healthy returns dashboard with sidebar", () => {
+    const html = VIEWS.healthy();
+    expect(html.length).toBeGreaterThan(0);
+    expect(html).toContain("Dashboard");
+    expect(html).toContain("/settings");
+    expect(html).toContain("Settings");
   });
 
   it("unhealthy returns non-empty string", () => {

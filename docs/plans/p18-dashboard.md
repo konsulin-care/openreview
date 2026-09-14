@@ -23,10 +23,16 @@ Excludes: Filtering, detailed views, export.
 
 - [ ] Implement dashboard statistics query (from project cache)
 - [ ] Add GET /api/v1/project/:id endpoint with stats
-- [ ] Build dashboard UI with summary cards
-- [ ] Connect frontend /dashboard to engine
-- [ ] Display counts from event-derived state
+- [ ] Build dashboard UI with summary cards inside `VIEWS["healthy"]`
+- [ ] Connect frontend / to engine (dashboard renders on `/` when state is healthy)
+- [ ] Display counts from event-derived state in sidebar main area
 - [ ] Write tests for statistics accuracy
+
+## Notes
+
+- Dashboard renders on `/` via `VIEWS["healthy"]` in `engine-state.ts` (no separate page)
+- Sidebar layout is established: 240px left sidebar with Settings link at bottom
+- Project list (P9) goes in the sidebar `<nav>` section
 
 ## Related ADRs
 

@@ -23,3 +23,6 @@ runtime:
         test("status: version field exists", function() {
           expect(res.body.version).to.be.a("string");
         });
+        test("status: chains to preflight", function() {
+          bru.runner.setNextRequest("preflight");
+        });

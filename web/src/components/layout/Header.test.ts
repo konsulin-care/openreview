@@ -29,11 +29,15 @@ describe("Header component (build verification)", () => {
     expect(indexHtml).toContain("OpenReview");
   });
 
-  it("renders all four nav links", () => {
+  it("renders nav links without Settings", () => {
     expect(indexHtml).toContain('href="/docs"');
     expect(indexHtml).toContain('href="/blog"');
     expect(indexHtml).toContain('href="/faq"');
     expect(indexHtml).toContain('href="/components"');
+    // Settings moved to dashboard sidebar
+    const headerEnd = indexHtml.indexOf('</header>');
+    const headerHtml = headerEnd > 0 ? indexHtml.substring(0, headerEnd) : indexHtml;
+    expect(headerHtml).not.toContain('href="/settings"');
   });
 
   it("nav links have hover class", () => {
