@@ -27,7 +27,7 @@ function buildStepHtml(step: number): string {
   const stepContent: Record<number, string> = {
     0: `<button data-skip>Skip</button><button data-next>Next</button>`,
     1: `<pre>git clone https://example.com</pre><button data-copy-all>Copy all</button>`,
-    2: `<input data-endpoint value="http://127.0.0.1:1234" /><button data-test-connection>Test</button><div data-connection-status class="hidden"></div><button data-save>Save</button>`,
+    2: `<input data-endpoint value="http://127.0.0.1:1234" /><button data-test-connection>Test</button><div data-connection-status class="hidden"></div>`,
     3: `<input id="actor-name" value="" /><input id="actor-email" value="" /><div data-init-error class="hidden"></div><button data-init-submit>Initialize</button>`,
   };
   return `<section>
@@ -284,26 +284,76 @@ describe("initWizard", () => {
     expect(statusEl?.textContent).toContain("unexpected");
   });
 
-  // --- Save endpoint ---
+  // --- Health check auto-save & auto-advance ---
 
-  it("data-save stores endpoint and sets configured", () => {
+  it("data-test-connection saves endpoint to localStorage on success", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ status: "ok" }), { status: 200 })
+    ));
+
     root = createRoot(2);
+    (root.querySelector("[data-endpoint]") as HTMLInputElement).value =
+      "https://custom.engine.example.com:5678";
     initWizard(root);
 
-    click(root, "[data-save]");
+    await clickAsync(root, "[data-test-connection]");
 
-    expect(store["openreview:engineEndpoint"]).toBe("http://127.0.0.1:1234");
+    expect(store["openreview:engineEndpoint"]).toBe(
+      "https://custom.engine.example.com:5678"
+    );
     expect(store["openreview:engineConfigured"]).toBe("true");
   });
 
-  it("data-save re-renders wizard after saving", () => {
+  it("data-test-connection auto-advances to step 3 (Initialize) on success", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ status: "ok" }), { status: 200 })
+    ));
+
     root = createRoot(2);
     initWizard(root);
     mockRenderOnboardingWizard.mockClear();
 
-    click(root, "[data-save]");
+    await clickAsync(root, "[data-test-connection]");
 
-    expect(mockRenderOnboardingWizard).toHaveBeenCalled();
+    expect(mockRenderOnboardingWizard).toHaveBeenCalledWith(3);
+  });
+
+  it("data-test-connection does NOT save or advance on failure", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network error")));
+
+    root = createRoot(2);
+    initWizard(root);
+    mockRenderOnboardingWizard.mockClear();
+
+    await clickAsync(root, "[data-test-connection]");
+
+    expect(store["openreview:engineEndpoint"]).toBeUndefined();
+    expect(store["openreview:engineConfigured"]).toBeUndefined();
+    expect(mockRenderOnboardingWizard).not.toHaveBeenCalled();
+  });
+
+  it("data-test-connection does NOT save or advance on non-ok health status", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ status: "error" }), { status: 200 })
+    ));
+
+    root = createRoot(2);
+    initWizard(root);
+    mockRenderOnboardingWizard.mockClear();
+
+    await clickAsync(root, "[data-test-connection]");
+
+    expect(store["openreview:engineEndpoint"]).toBeUndefined();
+    expect(store["openreview:engineConfigured"]).toBeUndefined();
+    expect(mockRenderOnboardingWizard).not.toHaveBeenCalled();
+  });
+
+  it("connect step does not render a Save & Continue button", () => {
+    root = createRoot(2);
+    initWizard(root);
+
+    const saveBtn = root.querySelector("[data-save]");
+    expect(saveBtn).toBeNull();
   });
 
   // --- Init submit ---

@@ -307,9 +307,6 @@ function renderConnectStep(): string {
         <button data-test-connection class="rounded bg-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-300">Test</button>
       </div>
       <div data-connection-status class="hidden text-sm"></div>
-      <div class="flex justify-end">
-        <button data-save class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">Save & Continue</button>
-      </div>
     </div>`;
 }
 

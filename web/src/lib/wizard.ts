@@ -125,6 +125,12 @@ async function handleTestConnection(root: HTMLElement): Promise<void> {
       statusEl.textContent = "Connection successful";
       statusEl.classList.remove("text-red-600");
       statusEl.classList.add("text-green-600");
+
+      // Save endpoint and advance to Initialize step
+      localStorage.setItem(STORAGE_KEY_ENDPOINT, endpoint);
+      localStorage.setItem(STORAGE_KEY_CONFIGURED, "true");
+      currentStep = 3;
+      rerender(root);
     } else {
       statusEl.textContent = "Engine returned unexpected status";
       statusEl.classList.remove("text-green-600");
@@ -135,21 +141,6 @@ async function handleTestConnection(root: HTMLElement): Promise<void> {
     statusEl.classList.remove("text-green-600");
     statusEl.classList.add("text-red-600");
   }
-}
-
-/**
- * Handle data-save: validate endpoint, persist to localStorage.
- * @param root — the wizard root element
- * @param onSaved — callback after successful save (triggers re-render)
- */
-function handleSave(root: HTMLElement, onSaved: () => void): void {
-  const input = root.querySelector("[data-endpoint]") as HTMLInputElement | null;
-  const endpoint = parseEndpoint(input?.value ?? null);
-
-  localStorage.setItem(STORAGE_KEY_ENDPOINT, endpoint);
-  localStorage.setItem(STORAGE_KEY_CONFIGURED, "true");
-
-  onSaved();
 }
 
 /**
@@ -274,13 +265,6 @@ export function initWizard(root: HTMLElement): void {
     if (target.closest("[data-test-connection]")) {
       event.preventDefault();
       await handleTestConnection(root);
-      return;
-    }
-
-    // data-save
-    if (target.closest("[data-save]")) {
-      event.preventDefault();
-      handleSave(root, () => rerender(root));
       return;
     }
 
