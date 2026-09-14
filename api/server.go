@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/openreview/openreview/app"
 	"github.com/openreview/openreview/config"
@@ -23,11 +24,13 @@ func NewServer(a *app.App, cfg *config.Config) *Server {
 	mux.HandleFunc("/api/v1/preflight", PreflightHandler())
 	mux.HandleFunc("/api/v1/initialize", InitializeHandler(a))
 
+	handler := corsMiddleware(cfg.CorsOrigins, mux)
+
 	addr := fmt.Sprintf("%s:%d", cfg.BindAddr, cfg.Port)
 	return &Server{
 		httpServer: &http.Server{
 			Addr:    addr,
-			Handler: mux,
+			Handler: handler,
 		},
 	}
 }
@@ -58,4 +61,48 @@ func requireReady(a *app.App, next http.HandlerFunc) http.HandlerFunc {
 		}
 		next(w, r)
 	}
+}
+
+// corsMiddleware adds CORS headers to responses.
+// When origins is empty, all origins are allowed.
+// When origins is a comma-separated list, only listed origins are allowed.
+func corsMiddleware(origins string, next http.Handler) http.Handler {
+	allowed := strings.Split(origins, ",")
+	allowAll := origins == ""
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+
+		// Determine if origin is allowed
+		var allowedOrigin string
+		if allowAll && origin != "" {
+			allowedOrigin = "*"
+		} else if !allowAll && origin != "" {
+			for _, o := range allowed {
+				if strings.TrimSpace(o) == origin {
+					allowedOrigin = origin
+					break
+				}
+			}
+		}
+
+		// Handle preflight
+		if r.Method == http.MethodOptions {
+			if allowedOrigin != "" {
+				w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+				w.Header().Set("Access-Control-Max-Age", "86400")
+			}
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		// Set CORS headers for actual requests
+		if allowedOrigin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
