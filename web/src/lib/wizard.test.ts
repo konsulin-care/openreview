@@ -195,6 +195,26 @@ describe("initWizard", () => {
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith("git clone https://example.com");
   });
 
+  it("data-copy-all auto-advances to next step after copied feedback", async () => {
+    vi.useFakeTimers();
+    root = createRoot(1);
+    initWizard(root);
+    mockRenderOnboardingWizard.mockClear();
+
+    click(root, "[data-copy-all]");
+    // Flush microtasks for async clipboard write
+    await vi.advanceTimersByTimeAsync(0);
+
+    const btn = root.querySelector("[data-copy-all]");
+    expect(btn?.textContent).toBe("Copied!");
+
+    // After 1500ms, should advance to step 2 (Connect)
+    vi.advanceTimersByTime(1500);
+    expect(mockRenderOnboardingWizard).toHaveBeenCalledWith(2);
+
+    vi.useRealTimers();
+  });
+
   it("data-copy shows brief Copied feedback", async () => {
     vi.useFakeTimers();
     root = createRoot(0);

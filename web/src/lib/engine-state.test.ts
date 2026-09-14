@@ -10,6 +10,7 @@ import {
   DEFAULT_ENDPOINT,
   detectOS,
   renderStepper,
+  renderOnboardingWizard,
   type OS,
 } from "./engine-state";
 
@@ -167,6 +168,59 @@ describe("renderStepper", () => {
 
   it("returns non-empty string", () => {
     expect(renderStepper(steps, 0).length).toBeGreaterThan(0);
+  });
+
+  it("completed step has data-skip and cursor-pointer", () => {
+    const html = renderStepper(steps, 1);
+    // Step 0 (Install) is completed when activeIndex is 1
+    expect(html).toContain("data-skip=\"0\"");
+    expect(html).toContain("cursor-pointer");
+  });
+
+  it("active step has data-skip and cursor-pointer", () => {
+    const html = renderStepper(steps, 1);
+    expect(html).toContain("data-skip=\"1\"");
+  });
+
+  it("pending step does not have data-skip", () => {
+    const html = renderStepper(steps, 1);
+    // Step 2 (Connect) is pending when activeIndex is 1
+    expect(html).not.toContain("data-skip=\"2\"");
+    expect(html).not.toContain("data-skip=\"3\"");
+  });
+
+  it("completed step has hover effect", () => {
+    const html = renderStepper(steps, 1);
+    expect(html).toContain("hover:opacity-80");
+  });
+});
+
+describe("renderOnboardingWizard", () => {
+  it("does not use dark terminal styling in any step", async () => {
+    // Check all view outputs for dark terminal styling
+    const views = ["checking", "unconfigured", "not-initialized", "healthy", "unhealthy"] as const;
+    for (const view of views) {
+      const html = VIEWS[view]();
+      // No step should have the dark terminal bg-gray-900 styling
+      expect(html).not.toContain("bg-gray-900");
+      expect(html).not.toContain("bg-gray-700");
+    }
+  });
+
+  it("setup step uses light code block styling", () => {
+    // The unconfigured view renders the wizard starting at step 0
+    // Step 1 (setup) content is not rendered until navigated to
+    // Check that renderOnboardingWizard at step 1 has light styling
+    const html = renderOnboardingWizard(1);
+    expect(html).toContain("bg-gray-100");
+    expect(html).not.toContain("bg-gray-900");
+    // Check copy button uses light styling
+    expect(html).toContain("bg-gray-200");
+  });
+
+  it("setup step does not have static waiting text", () => {
+    const html = renderOnboardingWizard(1);
+    expect(html).not.toContain("Waiting for engine to start");
   });
 });
 

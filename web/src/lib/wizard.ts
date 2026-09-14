@@ -262,6 +262,11 @@ export function initWizard(root: HTMLElement): void {
     if (target.closest("[data-copy-all]")) {
       event.preventDefault();
       await handleCopy(target.closest("[data-copy-all]")!, "pre");
+      // Auto-advance to next step after copied feedback
+      setTimeout(() => {
+        handleNext();
+        rerender(root);
+      }, 1500);
       return;
     }
 

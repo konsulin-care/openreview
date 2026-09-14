@@ -178,15 +178,26 @@ export function renderStepper(steps: string[], activeIndex: number): string {
   const items = steps
     .map((label, i) => {
       let dotClass: string;
+      let liClass = "flex items-center gap-2";
+      let liAttr = "";
+
       if (i < activeIndex) {
-        dotClass = "bg-green-500"; // completed
+        // Completed
+        dotClass = "bg-green-500";
+        liClass += " cursor-pointer hover:opacity-80";
+        liAttr = ` data-skip="${i}"`;
       } else if (i === activeIndex) {
-        dotClass = "border-2 border-blue-600 bg-white"; // active ring
+        // Active
+        dotClass = "border-2 border-blue-600 bg-white";
+        liClass += " cursor-pointer";
+        liAttr = ` data-skip="${i}"`;
       } else {
-        dotClass = "bg-gray-300"; // pending
+        // Pending
+        dotClass = "bg-gray-300";
       }
+
       const textClass = i === activeIndex ? "text-blue-600 font-medium" : i < activeIndex ? "text-green-600" : "text-gray-400";
-      return `<li class="flex items-center gap-2">
+      return `<li class="${liClass}"${liAttr}>
         <span class="h-3 w-3 rounded-full ${dotClass}"></span>
         <span class="text-sm ${textClass}">${label}</span>
       </li>`;
@@ -278,10 +289,9 @@ function renderSetupStep(os: OS): string {
     <div class="space-y-4">
       <p class="text-sm text-gray-600">Clone the repository and start the engine.</p>
       <div class="relative">
-        <pre class="overflow-x-auto rounded bg-gray-900 p-4 text-sm text-gray-100 font-mono">${codeBlock}</pre>
-        <button data-copy-all class="absolute top-2 right-2 rounded bg-gray-700 px-2 py-1 text-xs text-gray-300 hover:bg-gray-600">Copy all</button>
+        <pre class="overflow-x-auto rounded bg-gray-100 p-4 text-sm text-gray-900 font-mono">${codeBlock}</pre>
+        <button data-copy-all class="absolute top-2 right-2 rounded bg-gray-200 px-2 py-1 text-xs text-gray-600 hover:bg-gray-300">Copy all</button>
       </div>
-      <p class="text-xs text-gray-500">Waiting for engine to start…</p>
     </div>`;
 }
 
