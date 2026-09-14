@@ -146,6 +146,23 @@ Protected endpoints reject requests when engine state is NEW.
 - Frontend route guards are UX only — engine enforces authorization
 - Remote access via Tailscale (opt-in), not public by default
 
+## Frontend-Engine Connection
+
+The frontend is a static site served independently from the Go engine.
+On load, the frontend checks for a configured backend endpoint URL.
+
+Connection flow:
+1. No endpoint configured → guide user to enter engine URL
+2. Endpoint configured → health check with exponential backoff (max 5 retries)
+3. Health OK → check /status for engine state
+4. State=NEW → redirect to /initialize
+5. State=READY → redirect to /dashboard
+6. Health check exhausted → render "engine not running" with instructions
+
+Pre-initialization: engine rejects API calls except /health, /status,
+and /initialize. The frontend enforces routing; the engine enforces
+authorization.
+
 ## Portability Model
 
 Project directory is self-contained:
