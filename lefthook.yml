@@ -17,9 +17,5 @@ pre-push:
   commands:
     go-lint:
       run: golangci-lint run
-    go-test:
+    test:
       run: mise run test
-    api-contract:
-      run: mise run test-api
-    web-test:
-      run: pnpm --dir web test

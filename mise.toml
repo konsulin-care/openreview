@@ -9,8 +9,8 @@ lefthook = "2.1.12"
 [tasks]
 build = { run = "scripts/build.sh", description = "Build Go binary and Astro frontend" }
 dev = { run = "scripts/dev.sh", description = "Run Go and Astro dev servers concurrently" }
-test = "go test ./..."
-test-api = { run = "scripts/test-api.sh", description = "Run Bruno API contract tests" }
+test = { run = "scripts/test.sh", description = "Run tests (--backend|--frontend|--api, --race)" }
+bruno = { run = "scripts/bruno.sh", description = "Run Bruno API contract tests" }
 lint = "golangci-lint run"
 fmt = "go fmt ./..."
 hooks = "lefthook install"
