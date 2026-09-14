@@ -3,6 +3,7 @@
 *.exe
 *.test
 *.prof
+bin/
 
 # Node / Astro
 node_modules/

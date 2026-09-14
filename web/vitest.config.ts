@@ -6,5 +6,7 @@ export default getViteConfig({
     environment: "happy-dom",
     passWithNoTests: true,
     globals: true,
+    include: ["src/**/*.test.ts", "src/**/*.test.js"],
+    exclude: ["src/pages/**"],
   },
 });
