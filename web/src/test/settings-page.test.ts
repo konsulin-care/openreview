@@ -12,7 +12,8 @@ describe("settings page build verification", () => {
     expect(html).toContain("Settings");
   });
 
-  it("contains placeholder content", () => {
-    expect(html).toContain("coming soon");
+  it("contains actor input fields", () => {
+    expect(html).toContain("actor-name");
+    expect(html).toContain("actor-email");
   });
 });
