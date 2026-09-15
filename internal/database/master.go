@@ -158,6 +158,22 @@ func (m *MasterDB) UpdateProject(id, path, name string) error {
 	return nil
 }
 
+// UpdateActor updates the name and email of an existing actor.
+func (m *MasterDB) UpdateActor(id, name, email string) error {
+	result, err := m.db.Exec(
+		"UPDATE actor SET name = ?, email = ? WHERE id = ?",
+		name, email, id,
+	)
+	if err != nil {
+		return fmt.Errorf("update actor: %w", err)
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("update actor: not found")
+	}
+	return nil
+}
+
 // GetSetting retrieves a setting value by key. Returns empty string if not found.
 func (m *MasterDB) GetSetting(key string) (string, error) {
 	var value string

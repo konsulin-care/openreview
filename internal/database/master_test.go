@@ -210,6 +210,32 @@ func TestSetSetting_Upsert(t *testing.T) {
 	}
 }
 
+// --- Actor Update ---
+
+func TestUpdateActor_Success(t *testing.T) {
+	db := openTestDB(t)
+
+	_ = db.CreateActor("actor-1", "Alice", "alice@example.com")
+	err := db.UpdateActor("actor-1", "Alice Updated", "alice.new@example.com")
+	if err != nil {
+		t.Fatalf("UpdateActor() error = %v", err)
+	}
+
+	a, _ := db.GetActor("actor-1")
+	if a.Name != "Alice Updated" || a.Email != "alice.new@example.com" {
+		t.Errorf("after UpdateActor(), got %+v", a)
+	}
+}
+
+func TestUpdateActor_NotFound(t *testing.T) {
+	db := openTestDB(t)
+
+	err := db.UpdateActor("nonexistent", "Name", "email@example.com")
+	if err == nil {
+		t.Error("UpdateActor() should return error for nonexistent actor")
+	}
+}
+
 // openTestDB is a helper that opens an in-memory database for testing.
 func openTestDB(t *testing.T) *MasterDB {
 	t.Helper()
