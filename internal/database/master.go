@@ -83,7 +83,7 @@ func (m *MasterDB) GetActor(id string) (*Actor, error) {
 
 // ListActors returns all registered actors.
 func (m *MasterDB) ListActors() ([]Actor, error) {
-	rows, err := m.db.Query("SELECT id, name, email, created_at FROM actor")
+	rows, err := m.db.Query("SELECT id, name, email, created_at FROM actor ORDER BY created_at DESC")
 	if err != nil {
 		return nil, fmt.Errorf("list actors: %w", err)
 	}

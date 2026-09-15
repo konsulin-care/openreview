@@ -146,3 +146,41 @@ func TestActorHandler_PUT_EmptyEmail(t *testing.T) {
 		t.Errorf("status = %d, want %d", w.Code, http.StatusBadRequest)
 	}
 }
+
+func TestActorHandler_PUT_Persists(t *testing.T) {
+	a := app.NewApp()
+	initializeAndClose(t, a)
+
+	handler := ActorHandler(a)
+
+	// PUT new values
+	putBody := `{"name":"Bob","email":"bob@example.com"}`
+	putReq := httptest.NewRequest(http.MethodPut, "/api/v1/actor", bytes.NewBufferString(putBody))
+	putReq.Header.Set("Content-Type", "application/json")
+	putW := httptest.NewRecorder()
+	handler.ServeHTTP(putW, putReq)
+
+	if putW.Code != http.StatusOK {
+		t.Fatalf("PUT status = %d, want %d", putW.Code, http.StatusOK)
+	}
+
+	// GET the actor — must reflect the updated values, not the initial ones
+	getReq := httptest.NewRequest(http.MethodGet, "/api/v1/actor", nil)
+	getW := httptest.NewRecorder()
+	handler.ServeHTTP(getW, getReq)
+
+	if getW.Code != http.StatusOK {
+		t.Fatalf("GET status = %d, want %d", getW.Code, http.StatusOK)
+	}
+
+	var resp map[string]string
+	if err := json.Unmarshal(getW.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	if resp["name"] != "Bob" {
+		t.Errorf("name = %q, want %q", resp["name"], "Bob")
+	}
+	if resp["email"] != "bob@example.com" {
+		t.Errorf("email = %q, want %q", resp["email"], "bob@example.com")
+	}
+}

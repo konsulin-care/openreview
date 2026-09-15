@@ -318,11 +318,11 @@ function renderInitStep(): string {
     <div class="space-y-4">
       <p class="text-sm text-gray-600">Set up your reviewer profile.</p>
       <div>
-        <label for="actor-name" class="mb-1 block text-sm font-medium text-gray-700">Name</label>
+        <label for="actor-name" class="mb-1 block text-sm font-medium text-gray-700">Reviewer Name</label>
         <input type="text" id="actor-name" required class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Your name" />
       </div>
       <div>
-        <label for="actor-email" class="mb-1 block text-sm font-medium text-gray-700">Email</label>
+        <label for="actor-email" class="mb-1 block text-sm font-medium text-gray-700">Reviewer Email</label>
         <input type="email" id="actor-email" required class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="you@example.com" />
       </div>
       <div data-init-error class="hidden rounded bg-red-50 p-3 text-sm text-red-700"></div>
