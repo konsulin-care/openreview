@@ -100,6 +100,21 @@ func (m *MasterDB) ListActors() ([]Actor, error) {
 	return actors, rows.Err()
 }
 
+// LatestActor returns the most recently created actor, or nil if none exist.
+func (m *MasterDB) LatestActor() (*Actor, error) {
+	var a Actor
+	err := m.db.QueryRow(
+		"SELECT id, name, email, created_at FROM actor ORDER BY created_at DESC LIMIT 1",
+	).Scan(&a.ID, &a.Name, &a.Email, &a.CreatedAt)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("latest actor: %w", err)
+	}
+	return &a, nil
+}
+
 // RegisterProject adds a new project to the registry.
 func (m *MasterDB) RegisterProject(id, path, name string) error {
 	_, err := m.db.Exec(

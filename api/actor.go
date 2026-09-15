@@ -33,22 +33,21 @@ func handleGetActor(a *app.App, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	actors, err := a.DB.ListActors()
+	actor, err := a.DB.LatestActor()
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to list actors"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to get actor"})
 		return
 	}
 
-	if len(actors) == 0 {
+	if actor == nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "no actor"})
 		return
 	}
 
-	actor := actors[0]
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]string{
 		"id":    actor.ID,

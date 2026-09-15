@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -11,9 +12,24 @@ import (
 
 func TestActorHandler_GET_Success(t *testing.T) {
 	a := app.NewApp()
-	// Initialize the app with an actor
-	initializeAndClose(t, a)
 
+	// Initialize via the handler so the actor is created with a real DB
+	initHandler := InitializeHandler(a)
+	initBody := `{"name":"TestUser","email":"test@example.com"}`
+	initReq := httptest.NewRequest(http.MethodPost, "/api/v1/initialize", bytes.NewBufferString(initBody))
+	initReq.Header.Set("Content-Type", "application/json")
+	initW := httptest.NewRecorder()
+	initHandler.ServeHTTP(initW, initReq)
+
+	if initW.Code != http.StatusOK {
+		t.Fatalf("initialize failed: status %d", initW.Code)
+	}
+
+	var initResp map[string]string
+	_ = json.Unmarshal(initW.Body.Bytes(), &initResp)
+	actorID := initResp["actor_id"]
+
+	// GET the actor
 	handler := ActorHandler(a)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/actor", nil)
 	w := httptest.NewRecorder()
@@ -28,14 +44,14 @@ func TestActorHandler_GET_Success(t *testing.T) {
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("unmarshal error: %v", err)
 	}
-	if resp["id"] == "" {
-		t.Error("id should not be empty")
+	if resp["id"] != actorID {
+		t.Errorf("id = %q, want %q", resp["id"], actorID)
 	}
-	if resp["name"] != "Alice" {
-		t.Errorf("name = %q, want %q", resp["name"], "Alice")
+	if resp["name"] != "TestUser" {
+		t.Errorf("name = %q, want %q", resp["name"], "TestUser")
 	}
-	if resp["email"] != "alice@example.com" {
-		t.Errorf("email = %q, want %q", resp["email"], "alice@example.com")
+	if resp["email"] != "test@example.com" {
+		t.Errorf("email = %q, want %q", resp["email"], "test@example.com")
 	}
 }
 
@@ -50,5 +66,83 @@ func TestActorHandler_GET_NoActor(t *testing.T) {
 
 	if w.Code != http.StatusNotFound {
 		t.Errorf("status = %d, want %d", w.Code, http.StatusNotFound)
+	}
+}
+
+func TestActorHandler_PUT_Success(t *testing.T) {
+	a := app.NewApp()
+	initializeAndClose(t, a)
+
+	handler := ActorHandler(a)
+	body := `{"name":"Bob","email":"bob@example.com"}`
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/actor", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	var resp map[string]string
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	if resp["name"] != "Bob" {
+		t.Errorf("name = %q, want %q", resp["name"], "Bob")
+	}
+	if resp["email"] != "bob@example.com" {
+		t.Errorf("email = %q, want %q", resp["email"], "bob@example.com")
+	}
+}
+
+func TestActorHandler_PUT_NotInitialized(t *testing.T) {
+	a := app.NewApp()
+
+	handler := ActorHandler(a)
+	body := `{"name":"Bob","email":"bob@example.com"}`
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/actor", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusServiceUnavailable {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusServiceUnavailable)
+	}
+}
+
+func TestActorHandler_PUT_EmptyName(t *testing.T) {
+	a := app.NewApp()
+	initializeAndClose(t, a)
+
+	handler := ActorHandler(a)
+	body := `{"name":"","email":"bob@example.com"}`
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/actor", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusBadRequest)
+	}
+}
+
+func TestActorHandler_PUT_EmptyEmail(t *testing.T) {
+	a := app.NewApp()
+	initializeAndClose(t, a)
+
+	handler := ActorHandler(a)
+	body := `{"name":"Bob","email":""}`
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/actor", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusBadRequest)
 	}
 }
