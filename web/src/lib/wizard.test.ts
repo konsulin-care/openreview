@@ -409,7 +409,7 @@ describe("initWizard", () => {
     await click(root, "[data-init-submit]");
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://127.0.0.1:1234/api/v1/init",
+      "http://127.0.0.1:1234/api/v1/initialize",
       expect.objectContaining({
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -179,7 +179,7 @@ async function handleInitSubmit(
   );
 
   try {
-    const response = await fetch(`${endpoint}/api/v1/init`, {
+    const response = await fetch(`${endpoint}/api/v1/initialize`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email }),
