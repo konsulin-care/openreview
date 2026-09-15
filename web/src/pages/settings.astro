@@ -24,10 +24,25 @@ import Breadcrumbs from "../components/layout/Breadcrumbs.astro";
       </div>
 
       <div>
-        <label class="mb-1 block text-sm font-medium text-gray-700">Actor</label>
-        <div class="rounded border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600">
-          <span id="actor-name">—</span> &lt;<span id="actor-email">—</span>&gt;
-        </div>
+        <label for="actor-name" class="mb-1 block text-sm font-medium text-gray-700">Actor Name</label>
+        <input
+          type="text"
+          id="actor-name"
+          name="actor-name"
+          class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          placeholder="Your name"
+        />
+      </div>
+
+      <div>
+        <label for="actor-email" class="mb-1 block text-sm font-medium text-gray-700">Actor Email</label>
+        <input
+          type="email"
+          id="actor-email"
+          name="actor-email"
+          class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          placeholder="you@example.com"
+        />
       </div>
 
       <div id="connection-status" class="hidden rounded p-3 text-sm"></div>
@@ -54,16 +69,36 @@ import Breadcrumbs from "../components/layout/Breadcrumbs.astro";
     const ACTOR_EMAIL_KEY = "openreview:actorEmail";
 
     const endpointInput = document.getElementById("endpoint") as HTMLInputElement;
-    const actorName = document.getElementById("actor-name") as HTMLElement;
-    const actorEmail = document.getElementById("actor-email") as HTMLElement;
+    const actorNameInput = document.getElementById("actor-name") as HTMLInputElement;
+    const actorEmailInput = document.getElementById("actor-email") as HTMLInputElement;
     const statusDiv = document.getElementById("connection-status") as HTMLElement;
     const testBtn = document.getElementById("test-btn") as HTMLButtonElement;
     const form = document.getElementById("settings-form") as HTMLFormElement;
 
-    // Load saved values
+    // Load endpoint from localStorage
     endpointInput.value = localStorage.getItem(ENDPOINT_KEY) || "http://127.0.0.1:1234";
-    actorName.textContent = localStorage.getItem(ACTOR_NAME_KEY) || "—";
-    actorEmail.textContent = localStorage.getItem(ACTOR_EMAIL_KEY) || "—";
+
+    // Load actor info from backend, fallback to localStorage
+    async function loadActorInfo() {
+      const endpoint = endpointInput.value.trim();
+      try {
+        const res = await fetch(`${endpoint}/api/v1/actor`);
+        if (res.ok) {
+          const data = await res.json();
+          actorNameInput.value = data.name || "";
+          actorEmailInput.value = data.email || "";
+          localStorage.setItem(ACTOR_NAME_KEY, data.name || "");
+          localStorage.setItem(ACTOR_EMAIL_KEY, data.email || "");
+          return;
+        }
+      } catch {
+        // Backend unreachable, fall through to localStorage
+      }
+      // Fallback to localStorage
+      actorNameInput.value = localStorage.getItem(ACTOR_NAME_KEY) || "";
+      actorEmailInput.value = localStorage.getItem(ACTOR_EMAIL_KEY) || "";
+    }
+    loadActorInfo();
 
     function showStatus(ok: boolean, msg: string) {
       statusDiv.className = `rounded p-3 text-sm ${ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`;
@@ -97,14 +132,41 @@ import Breadcrumbs from "../components/layout/Breadcrumbs.astro";
       }
     });
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const endpoint = endpointInput.value.trim();
       if (!endpoint) return;
 
+      const name = actorNameInput.value.trim();
+      const email = actorEmailInput.value.trim();
+
+      // Save endpoint to localStorage
       localStorage.setItem(ENDPOINT_KEY, endpoint);
       localStorage.setItem(CONFIGURED_KEY, "true");
-      showStatus(true, "Settings saved.");
+
+      // Update actor info via backend
+      if (name && email) {
+        try {
+          const res = await fetch(`${endpoint}/api/v1/actor`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email }),
+          });
+          if (res.ok) {
+            localStorage.setItem(ACTOR_NAME_KEY, name);
+            localStorage.setItem(ACTOR_EMAIL_KEY, email);
+            showStatus(true, "Settings saved.");
+          } else {
+            showStatus(false, "Failed to update actor info.");
+          }
+        } catch {
+          showStatus(false, "Cannot reach engine — settings saved locally.");
+          localStorage.setItem(ACTOR_NAME_KEY, name);
+          localStorage.setItem(ACTOR_EMAIL_KEY, email);
+        }
+      } else {
+        showStatus(true, "Settings saved.");
+      }
     });
   </script>
 </BaseLayout>
