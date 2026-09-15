@@ -35,3 +35,6 @@ runtime:
           expect(res.body.actor_id.length).to.equal(26);
           expect(res.body.state).to.equal("READY");
         });
+        test("initialize: chains to get actor", function() {
+          bru.runner.setNextRequest("get actor");
+        });

@@ -17,7 +17,10 @@ runtime:
       value: "ok"
   scripts:
     - type: tests
-      code: |-
+      code: |- 
+        test("health: returns ok", function() {
+          expect(res.body.status).to.equal("ok");
+        });
         test("health: chains to status", function() {
           bru.runner.setNextRequest("status");
         });
