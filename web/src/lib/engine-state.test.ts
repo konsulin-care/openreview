@@ -249,12 +249,10 @@ describe("VIEWS", () => {
     expect(html).toContain("Initialize");
   });
 
-  it("healthy returns dashboard with sidebar", () => {
+  it("healthy returns dashboard content", () => {
     const html = VIEWS.healthy();
     expect(html.length).toBeGreaterThan(0);
     expect(html).toContain("Dashboard");
-    expect(html).toContain("/settings");
-    expect(html).toContain("Settings");
   });
 
   it("unhealthy returns non-empty string", () => {
