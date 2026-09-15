@@ -428,9 +428,24 @@ describe("initWizard", () => {
     (root.querySelector("#actor-email") as HTMLInputElement).value = "alice@example.com";
     initWizard(root);
 
-    await click(root, "[data-init-submit]");
+    await clickAsync(root, "[data-init-submit]");
 
     expect(store["openreview:engineConfigured"]).toBe("true");
+  });
+
+  it("data-init-submit stores actor_id in localStorage on success", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ actor_id: "01ABC123DEF456", state: "READY" }), { status: 200 })
+    ));
+
+    root = createRoot(3);
+    (root.querySelector("#actor-name") as HTMLInputElement).value = "Alice";
+    (root.querySelector("#actor-email") as HTMLInputElement).value = "alice@example.com";
+    initWizard(root);
+
+    await clickAsync(root, "[data-init-submit]");
+
+    expect(store["openreview:actorId"]).toBe("01ABC123DEF456");
   });
 
   it("data-init-submit shows error on fetch failure", async () => {

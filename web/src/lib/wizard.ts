@@ -186,7 +186,11 @@ async function handleInitSubmit(
     });
 
     if (response.ok) {
+      const result = await response.json();
       localStorage.setItem(STORAGE_KEY_CONFIGURED, "true");
+      if (result.actor_id) {
+        localStorage.setItem("openreview:actorId", result.actor_id);
+      }
       onSaved();
     } else {
       if (errorEl) {
