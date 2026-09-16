@@ -1,0 +1,28 @@
+info:
+  name: status
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/v1/status"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.state
+      operator: isString
+  scripts:
+    - type: tests
+      code: |-
+        test("status: state is NEW or READY", function() {
+          expect(res.body.state).to.be.oneOf(["NEW", "READY"]);
+        });
+        test("status: version field exists", function() {
+          expect(res.body.version).to.be.a("string");
+        });
+        test("status: chains to preflight", function() {
+          bru.runner.setNextRequest("preflight");
+        });

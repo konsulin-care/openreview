@@ -1,35 +1,27 @@
 import { describe, it, expect } from "vitest";
 import {
   APPSHELL_CLASSES,
-  HEADER_CLASSES,
-  NAV_CLASSES,
+  SIDEBAR_WIDTH_EXPANDED,
+  SIDEBAR_WIDTH_COLLAPSED,
   MAIN_CLASSES,
-  SIDEBAR_CLASSES,
 } from "./layout-utils";
 
 describe("Layout class constants", () => {
-  it("APPSHELL_CLASSES has min-h-screen", () => {
+  it("APPSHELL_CLASSES has flex and min-h-screen", () => {
+    expect(APPSHELL_CLASSES).toContain("flex");
     expect(APPSHELL_CLASSES).toContain("min-h-screen");
   });
 
-  it("HEADER_CLASSES has border-b and bg-white", () => {
-    expect(HEADER_CLASSES).toContain("border-b");
-    expect(HEADER_CLASSES).toContain("bg-white");
+  it("SIDEBAR_WIDTH_EXPANDED is w-60", () => {
+    expect(SIDEBAR_WIDTH_EXPANDED).toBe("w-60");
   });
 
-  it("NAV_CLASSES has flex layout", () => {
-    expect(NAV_CLASSES).toContain("flex");
-    expect(NAV_CLASSES).toContain("max-w-4xl");
+  it("SIDEBAR_WIDTH_COLLAPSED is w-16", () => {
+    expect(SIDEBAR_WIDTH_COLLAPSED).toBe("w-16");
   });
 
-  it("MAIN_CLASSES has max-w-4xl and padding", () => {
-    expect(MAIN_CLASSES).toContain("max-w-4xl");
-    expect(MAIN_CLASSES).toContain("px-4");
-    expect(MAIN_CLASSES).toContain("py-8");
-  });
-
-  it("SIDEBAR_CLASSES has width and border", () => {
-    expect(SIDEBAR_CLASSES).toContain("w-64");
-    expect(SIDEBAR_CLASSES).toContain("border-r");
+  it("MAIN_CLASSES has flex-1 and transition", () => {
+    expect(MAIN_CLASSES).toContain("flex-1");
+    expect(MAIN_CLASSES).toContain("transition-all");
   });
 });

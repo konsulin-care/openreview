@@ -24,8 +24,14 @@ Excludes: Event processing, screening.
 - [ ] Add GET /api/v1/project/:id endpoint
 - [ ] Add GET /api/v1/project list endpoint
 - [ ] Connect frontend /project?id= to engine
-- [ ] Add project selection UI to /dashboard
+- [ ] Add project list UI to sidebar nav in `VIEWS["healthy"]`
 - [ ] Write tests for registration and path resolution
+
+## Notes
+
+- Sidebar layout established in onboarding work: 240px left sidebar on `/`
+- Project list goes in the sidebar `<nav>` section (empty placeholder exists)
+- Settings link at bottom of sidebar
 
 ## Related ADRs
 

@@ -41,8 +41,8 @@ jobs:
           restore-keys: go-${{ runner.os }}-
       - run: golangci-lint run
 
-  go-test:
-    name: Go Test
+  test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,15 +54,6 @@ jobs:
           path: ~/go/pkg/mod
           key: go-${{ runner.os }}-${{ hashFiles('go.sum') }}
           restore-keys: go-${{ runner.os }}-
-      - run: go test -race -count=1 ./...
-
-  web:
-    name: Web Check & Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
-      - run: mise install
       - name: Cache pnpm store
         uses: actions/cache@v4
         with:
@@ -70,12 +61,9 @@ jobs:
           key: pnpm-${{ runner.os }}-${{ hashFiles('web/pnpm-lock.yaml') }}
           restore-keys: pnpm-${{ runner.os }}-
       - run: pnpm install --dir web
-      - run: pnpm exec astro check
-        working-directory: web
-      - run: pnpm build
-        working-directory: web
-      - run: pnpm test
-        working-directory: web
+      - name: Build frontend
+        run: pnpm --dir web build
+      - run: mise run test --race
 
   build:
     name: Build

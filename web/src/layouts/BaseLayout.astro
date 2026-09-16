@@ -1,7 +1,6 @@
 ---
 import "../styles/global.css";
 import AppShell from "../components/layout/AppShell.astro";
-import Header from "../components/layout/Header.astro";
 
 interface Props {
   title: string;
@@ -22,8 +21,7 @@ const {
     <title>{title}</title>
   </head>
   <body class="min-h-screen bg-gray-50 text-gray-900">
-    <AppShell>
-      <Header slot="header" />
+    <AppShell currentPath={Astro.url.pathname}>
       <slot />
     </AppShell>
   </body>

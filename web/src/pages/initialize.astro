@@ -1,0 +1,96 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Initialize - OpenReview">
+  <div class="mx-auto max-w-md py-12">
+    <h1 class="mb-2 text-3xl font-bold">Welcome to OpenReview</h1>
+    <p class="mb-8 text-gray-600">Set up your review engine to get started.</p>
+
+    <form id="initialize-form" class="space-y-4">
+      <div>
+        <label for="name" class="mb-1 block text-sm font-medium text-gray-700">Name</label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          required
+          class="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          placeholder="Your name"
+        />
+      </div>
+
+      <div>
+        <label for="email" class="mb-1 block text-sm font-medium text-gray-700">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          required
+          class="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          placeholder="you@example.com"
+        />
+      </div>
+
+      <div id="error-message" class="hidden rounded bg-red-50 p-3 text-sm text-red-700"></div>
+
+      <button
+        type="submit"
+        class="w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      >
+        Initialize
+      </button>
+    </form>
+  </div>
+
+  <script>
+    import { getConfiguredEndpoint } from "../lib/engine-state";
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("initialize-form") as HTMLFormElement;
+      const errorDiv = document.getElementById("error-message");
+
+      form?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (errorDiv) errorDiv.classList.add("hidden");
+
+        const name = (document.getElementById("name") as HTMLInputElement)?.value;
+        const email = (document.getElementById("email") as HTMLInputElement)?.value;
+
+        if (!name || !email) {
+          if (errorDiv) {
+            errorDiv.textContent = "Name and email are required.";
+            errorDiv.classList.remove("hidden");
+          }
+          return;
+        }
+
+        const endpoint = getConfiguredEndpoint();
+
+        try {
+          const response = await fetch(`${endpoint}/api/v1/initialize`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email }),
+          });
+
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || `Initialization failed (${response.status})`);
+          }
+
+          const result = await response.json();
+          localStorage.setItem("openreview:actorId", result.actor_id);
+          localStorage.setItem("openreview:actorName", name);
+          localStorage.setItem("openreview:actorEmail", email);
+          window.location.href = "/";
+        } catch (err) {
+          if (errorDiv) {
+            errorDiv.textContent = err instanceof Error ? err.message : "Initialization failed.";
+            errorDiv.classList.remove("hidden");
+          }
+        }
+      });
+    });
+  </script>
+</BaseLayout>

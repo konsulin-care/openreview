@@ -49,9 +49,23 @@ Application routes (hardcoded pages):
 - Files ≤ 300 lines
 
 ## Engine Communication
-ReviewEngineClient abstraction wraps API calls.
-Configurable endpoint: localhost, LAN, Tailscale.
-Client lives in web/src/lib/.
+
+ReviewEngineClient wraps all API calls. The engine endpoint URL is
+stored in localStorage (`openreview:engineEndpoint`). On startup,
+the frontend checks connectivity:
+
+- No URL configured → render setup screen
+- URL configured → health check with exponential backoff (max 5 retries, base 500ms)
+- Health OK → GET /api/v1/status → route to /initialize or /dashboard
+- Health failed → render "engine not running" screen with `mise run app` instructions
+
+The client does not hardcode localhost — supports LAN and Tailscale URLs.
+Endpoint is evaluated per request via a getter function for dynamic
+reconfiguration.
+
+Frontend states: unconfigured, not-initialized, healthy, unhealthy.
+`engine-state.ts` owns the state machine; `engine-client.ts` owns
+HTTP communication.
 
 ## Testing
 

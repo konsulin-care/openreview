@@ -1,0 +1,36 @@
+info:
+  name: initialize
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/initialize"
+  header:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: '{"name": "Test User", "email": "test@example.com"}'
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.actor_id
+      operator: isString
+    - expression: res.body.state
+      operator: eq
+      value: "READY"
+  scripts:
+    - type: tests
+      code: |-
+        test("initialize: returns actor_id and READY state", function() {
+          expect(res.body.actor_id).to.be.a("string");
+          expect(res.body.actor_id.length).to.equal(26);
+          expect(res.body.state).to.equal("READY");
+        });
+        test("initialize: chains to get actor", function() {
+          bru.runner.setNextRequest("get actor");
+        });

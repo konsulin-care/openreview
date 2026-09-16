@@ -1,0 +1,172 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Breadcrumbs from "../components/layout/Breadcrumbs.astro";
+---
+
+<BaseLayout title="Settings — OpenReview">
+  <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Settings" }]} />
+
+  <section class="mx-auto max-w-md py-12">
+    <h1 class="mb-2 text-3xl font-bold">Settings</h1>
+    <p class="mb-8 text-gray-600">Configure your engine connection.</p>
+
+    <form id="settings-form" class="space-y-4">
+      <div>
+        <label for="endpoint" class="mb-1 block text-sm font-medium text-gray-700">Engine Endpoint</label>
+        <input
+          type="text"
+          id="endpoint"
+          name="endpoint"
+          required
+          class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          placeholder="http://127.0.0.1:1234"
+        />
+      </div>
+
+      <div>
+        <label for="actor-name" class="mb-1 block text-sm font-medium text-gray-700">Reviewer Name</label>
+        <input
+          type="text"
+          id="actor-name"
+          name="actor-name"
+          class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          placeholder="Your name"
+        />
+      </div>
+
+      <div>
+        <label for="actor-email" class="mb-1 block text-sm font-medium text-gray-700">Reviewer Email</label>
+        <input
+          type="email"
+          id="actor-email"
+          name="actor-email"
+          class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          placeholder="you@example.com"
+        />
+      </div>
+
+      <div id="connection-status" class="hidden rounded p-3 text-sm"></div>
+
+      <div class="flex gap-2">
+        <button type="button" id="test-btn" class="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+          Test connection
+        </button>
+        <button type="submit" class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">
+          Save
+        </button>
+      </div>
+    </form>
+
+    <div class="mt-6">
+      <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to dashboard</a>
+    </div>
+  </section>
+
+  <script>
+    const ENDPOINT_KEY = "openreview:engineEndpoint";
+    const CONFIGURED_KEY = "openreview:engineConfigured";
+    const ACTOR_NAME_KEY = "openreview:actorName";
+    const ACTOR_EMAIL_KEY = "openreview:actorEmail";
+
+    const endpointInput = document.getElementById("endpoint") as HTMLInputElement;
+    const actorNameInput = document.getElementById("actor-name") as HTMLInputElement;
+    const actorEmailInput = document.getElementById("actor-email") as HTMLInputElement;
+    const statusDiv = document.getElementById("connection-status") as HTMLElement;
+    const testBtn = document.getElementById("test-btn") as HTMLButtonElement;
+    const form = document.getElementById("settings-form") as HTMLFormElement;
+
+    // Load endpoint from localStorage
+    endpointInput.value = localStorage.getItem(ENDPOINT_KEY) || "http://127.0.0.1:1234";
+
+    // Load actor info from backend, fallback to localStorage
+    async function loadActorInfo() {
+      const endpoint = endpointInput.value.trim();
+      try {
+        const res = await fetch(`${endpoint}/api/v1/actor`);
+        if (res.ok) {
+          const data = await res.json();
+          actorNameInput.value = data.name || "";
+          actorEmailInput.value = data.email || "";
+          localStorage.setItem(ACTOR_NAME_KEY, data.name || "");
+          localStorage.setItem(ACTOR_EMAIL_KEY, data.email || "");
+          return;
+        }
+      } catch {
+        // Backend unreachable, fall through to localStorage
+      }
+      // Fallback to localStorage
+      actorNameInput.value = localStorage.getItem(ACTOR_NAME_KEY) || "";
+      actorEmailInput.value = localStorage.getItem(ACTOR_EMAIL_KEY) || "";
+    }
+    loadActorInfo();
+
+    function showStatus(ok: boolean, msg: string) {
+      statusDiv.className = `rounded p-3 text-sm ${ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`;
+      statusDiv.textContent = msg;
+      statusDiv.classList.remove("hidden");
+    }
+
+    testBtn.addEventListener("click", async () => {
+      const endpoint = endpointInput.value.trim();
+      if (!endpoint) {
+        showStatus(false, "Please enter an endpoint URL.");
+        return;
+      }
+
+      testBtn.disabled = true;
+      testBtn.textContent = "Testing…";
+
+      try {
+        const res = await fetch(`${endpoint}/api/v1/health`);
+        if (res.ok) {
+          const data = await res.json();
+          showStatus(true, `Engine reachable — status: ${data.status}`);
+        } else {
+          showStatus(false, `Engine returned ${res.status}`);
+        }
+      } catch {
+        showStatus(false, "Cannot reach engine — is it running?");
+      } finally {
+        testBtn.disabled = false;
+        testBtn.textContent = "Test connection";
+      }
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const endpoint = endpointInput.value.trim();
+      if (!endpoint) return;
+
+      const name = actorNameInput.value.trim();
+      const email = actorEmailInput.value.trim();
+
+      // Save endpoint to localStorage
+      localStorage.setItem(ENDPOINT_KEY, endpoint);
+      localStorage.setItem(CONFIGURED_KEY, "true");
+
+      // Update actor info via backend
+      if (name && email) {
+        try {
+          const res = await fetch(`${endpoint}/api/v1/actor`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email }),
+          });
+          if (res.ok) {
+            localStorage.setItem(ACTOR_NAME_KEY, name);
+            localStorage.setItem(ACTOR_EMAIL_KEY, email);
+            showStatus(true, "Settings saved.");
+          } else {
+            showStatus(false, "Failed to update actor info.");
+          }
+        } catch {
+          showStatus(false, "Cannot reach engine — settings saved locally.");
+          localStorage.setItem(ACTOR_NAME_KEY, name);
+          localStorage.setItem(ACTOR_EMAIL_KEY, email);
+        }
+      } else {
+        showStatus(true, "Settings saved.");
+      }
+    });
+  </script>
+</BaseLayout>

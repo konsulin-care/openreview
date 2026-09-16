@@ -3,11 +3,12 @@
 *.exe
 *.test
 *.prof
+bin/
 
 # Node / Astro
 node_modules/
 web/dist/
-web/.astro/
+.astro/
 
 # IDE
 .idea/

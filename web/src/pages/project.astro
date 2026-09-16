@@ -1,0 +1,44 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Breadcrumbs from "../components/layout/Breadcrumbs.astro";
+---
+
+<BaseLayout title="Project — OpenReview">
+  <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Project" }]} />
+
+  <div id="app-root">
+    <div class="flex items-center justify-center py-12">
+      <div class="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const appRoot = document.getElementById("app-root");
+      if (!appRoot) return;
+
+      const params = new URLSearchParams(window.location.search);
+      const projectId = params.get("id");
+
+      if (!projectId || projectId.trim() === "") {
+        appRoot.innerHTML = `
+          <section class="py-12 text-center">
+            <h1 class="mb-4 text-3xl font-bold">No Project Selected</h1>
+            <p class="mb-8 text-gray-600">Please select a project from the dashboard.</p>
+            <a href="/" class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+              Back to Dashboard
+            </a>
+          </section>
+        `;
+        return;
+      }
+
+      appRoot.innerHTML = `
+        <section class="py-12">
+          <h1 class="mb-4 text-3xl font-bold">Project: ${projectId}</h1>
+          <p class="text-gray-600">Project screening view coming soon.</p>
+        </section>
+      `;
+    });
+  </script>
+</BaseLayout>

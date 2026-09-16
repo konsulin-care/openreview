@@ -17,13 +17,19 @@ both the application and documentation site.
 - Astro for the frontend: static generation, TypeScript, content
   collections for docs/blog/FAQ, component reuse
 
+The frontend and engine are separate processes. The user runs the
+Go engine locally (`mise run app`). The frontend is a static site
+served independently. The frontend connects to the engine via a
+user-configured endpoint URL stored in localStorage.
+
 React may be introduced later for complex interactive components
 but is not the foundational framework.
 
 ## Consequences
 
 - Single Go binary for the engine, easy distribution
-- Astro builds static assets that can be served by the Go engine
+- Astro builds static assets served independently from the engine
+- Frontend connects to engine via configurable endpoint URL
 - Content (docs, blog, FAQ) uses Markdown/MDX via Astro collections
 - Component system shared between application and documentation
 - Clear separation: Go owns data, Astro owns presentation

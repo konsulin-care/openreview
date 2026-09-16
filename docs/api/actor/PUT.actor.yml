@@ -1,0 +1,37 @@
+info:
+  name: put actor
+  type: http
+  seq: 6
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/v1/actor"
+  header:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: '{"name": "{{actorName}}", "email": "{{actorEmail}}"}'
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.id
+      operator: isString
+    - expression: res.body.name
+      operator: eq
+      value: "{{actorName}}"
+    - expression: res.body.email
+      operator: eq
+      value: "{{actorEmail}}"
+  scripts:
+    - type: tests
+      code: |-
+        test("put actor: returns updated actor", function() {
+          expect(res.body.id).to.be.a("string");
+          expect(res.body.id.length).to.equal(26);
+          expect(res.body.name).to.equal(bru.getEnvVar("actorName"));
+          expect(res.body.email).to.equal(bru.getEnvVar("actorEmail"));
+        });

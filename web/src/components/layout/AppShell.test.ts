@@ -6,9 +6,6 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const distDir = resolve(__dirname, "../../../dist");
 
-/**
- * Build verification tests for AppShell component.
- */
 describe("AppShell component (build verification)", () => {
   let indexHtml: string;
 
@@ -16,15 +13,15 @@ describe("AppShell component (build verification)", () => {
     indexHtml = readFileSync(resolve(distDir, "index.html"), "utf-8");
   });
 
-  it("renders min-h-screen wrapper", () => {
-    expect(indexHtml).toContain("min-h-screen");
+  it("renders aside element (sidebar)", () => {
+    expect(indexHtml).toContain("<aside");
   });
 
-  it("renders main content area with correct classes", () => {
-    expect(indexHtml).toContain("mx-auto max-w-4xl flex-1 px-4 py-8");
+  it("renders main content area with flex-1", () => {
+    expect(indexHtml).toContain("flex-1");
   });
 
-  it("has no sidebar markup on homepage", () => {
-    expect(indexHtml).not.toContain("w-64 border-r");
+  it("does not render header element", () => {
+    expect(indexHtml).not.toContain("<header");
   });
 });
