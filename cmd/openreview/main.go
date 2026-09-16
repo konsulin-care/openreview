@@ -51,5 +51,8 @@ func main() {
 
 	<-ctx.Done()
 	log.Println("shutting down")
+	if err := srv.Shutdown(context.Background()); err != nil {
+		log.Printf("shutdown error: %v", err)
+	}
 	os.Exit(0)
 }

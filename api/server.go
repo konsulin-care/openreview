@@ -2,6 +2,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -49,6 +50,11 @@ func (s *Server) Addr() string {
 // Handler exposes the underlying http.Handler for testing.
 func (s *Server) Handler() http.Handler {
 	return s.httpServer.Handler
+}
+
+// Shutdown gracefully stops the HTTP server.
+func (s *Server) Shutdown(ctx context.Context) error {
+	return s.httpServer.Shutdown(ctx)
 }
 
 // requireReady returns 503 if the app state is not READY.

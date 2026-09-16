@@ -6,8 +6,12 @@ TMP_DIR=$(mktemp -d)
 DB_PATH="$TMP_DIR/test.sqlite"
 export OPENREVIEW_DB_PATH="$DB_PATH"
 
+# Build the binary first so we can run it directly (avoids go run PID issues)
+echo "Building test server..."
+go build -o "$TMP_DIR/openreview" ./cmd/openreview
+
 echo "Starting test server on port 1236 with database at $DB_PATH"
-go run ./cmd/openreview -port 1236 -bind 127.0.0.1 &
+"$TMP_DIR/openreview" -port 1236 -bind 127.0.0.1 &
 SERVER_PID=$!
 
 # Cleanup function
@@ -28,4 +32,5 @@ done
 
 # Override base URL for Bruno to use test server
 cd docs/api
-bru run --env local --env-var baseUrl=http://127.0.0.1:1236 health status preflight initialization actor
+bru run --env local --env-var baseUrl=http://127.0.0.1:1236
+cleanup
