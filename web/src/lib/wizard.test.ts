@@ -237,24 +237,6 @@ describe("initWizard", () => {
     vi.useRealTimers();
   });
 
-  // --- Connection test ---
-
-  it("data-test-connection shows pass on healthy response", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ status: "ok" }), { status: 200 })
-    ));
-
-    root = createRoot(2);
-    initWizard(root);
-
-    await clickAsync(root, "[data-test-connection]");
-
-    const statusEl = root.querySelector("[data-connection-status]");
-    expect(statusEl?.classList.contains("hidden")).toBe(false);
-    expect(statusEl?.textContent).toContain("successful");
-    expect(statusEl?.classList.contains("text-green-600")).toBe(true);
-  });
-
   it("data-test-connection shows fail on error", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network error")));
 

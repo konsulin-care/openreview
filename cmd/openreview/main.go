@@ -18,11 +18,23 @@ func main() {
 	cfg := config.ParseFlags()
 	a := app.NewApp()
 
-	dbPath, err := database.MasterDBPath()
-	if err != nil {
-		log.Printf("warning: could not resolve data dir: %v", err)
-	} else if err := a.Init(dbPath); err != nil {
-		log.Printf("warning: could not initialize master DB: %v", err)
+	// Determine database path: use custom path from env (for testing) or default
+	var dbPath string
+	if customPath := os.Getenv("OPENREVIEW_DB_PATH"); customPath != "" {
+		dbPath = customPath
+		a.SetDBPath(dbPath)
+	} else {
+		var err error
+		dbPath, err = database.MasterDBPath()
+		if err != nil {
+			log.Printf("warning: could not resolve data dir: %v", err)
+		}
+	}
+
+	if dbPath != "" {
+		if err := a.Init(dbPath); err != nil {
+			log.Printf("warning: could not initialize master DB: %v", err)
+		}
 	}
 
 	srv := api.NewServer(a, cfg)

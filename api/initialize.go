@@ -44,10 +44,15 @@ func InitializeHandler(a *app.App) http.HandlerFunc {
 			return
 		}
 
-		dbPath, err := database.MasterDBPath()
-		if err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to resolve data directory"})
-			return
+		// Use custom DB path if set (for testing), otherwise use default
+		dbPath := a.DBPath
+		if dbPath == "" {
+			var err error
+			dbPath, err = database.MasterDBPath()
+			if err != nil {
+				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to resolve data directory"})
+				return
+			}
 		}
 
 		// Open or create the database

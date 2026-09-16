@@ -10,12 +10,8 @@ http:
     - name: Content-Type
       value: application/json
   body:
-    mode: raw
-    raw: |
-      {
-        "name": "{{actorName}}",
-        "email": "{{actorEmail}}"
-      }
+    type: json
+    data: '{"name": "Test User", "email": "test@example.com"}'
 
 runtime:
   assertions:
@@ -28,10 +24,6 @@ runtime:
       operator: eq
       value: "READY"
   scripts:
-    - type: prerequest
-      code: |-
-        bru.setVar("actorName", "Test User");
-        bru.setVar("actorEmail", "test@example.com");
     - type: tests
       code: |-
         test("initialize: returns actor_id and READY state", function() {

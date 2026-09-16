@@ -19,8 +19,9 @@ const (
 
 // App holds the application state.
 type App struct {
-	State State
-	DB    *database.MasterDB
+	State  State
+	DB     *database.MasterDB
+	DBPath string // configurable database path (for testing)
 }
 
 // NewApp creates a new App in StateNew.
@@ -32,7 +33,19 @@ func NewApp() *App {
 // If the database file exists and contains an actor, state transitions to READY.
 // If the file doesn't exist or has no actor, state stays NEW.
 func (a *App) Init(dbPath string) error {
-	db, err := database.Open(dbPath)
+	path := dbPath
+	if path == "" {
+		path = a.DBPath
+	}
+	if path == "" {
+		var err error
+		path, err = database.MasterDBPath()
+		if err != nil {
+			return err
+		}
+	}
+
+	db, err := database.Open(path)
 	if err != nil {
 		// Database file doesn't exist or can't be opened — stay in NEW
 		log.Printf("master DB not available, staying in NEW state: %v", err)
@@ -54,4 +67,9 @@ func (a *App) Init(dbPath string) error {
 	// DB exists but no actor — stay in NEW, but keep DB open for later initialization
 	a.DB = db
 	return nil
+}
+
+// SetDBPath sets a custom database path (primarily for testing).
+func (a *App) SetDBPath(path string) {
+	a.DBPath = path
 }

@@ -37,9 +37,36 @@ function rerender(root: HTMLElement): void {
   const wizardSection = root.querySelector("section");
   if (wizardSection) {
     // Extract just the inner content (h1, p, stepper, card) from the rendered wizard
-    const inner = wizardHtml.match(/<section[^>]*>([\s\S]*)<\/section>/)?.[1] ?? wizardHtml;
+    const inner =
+      wizardHtml.match(/<section[^>]*>([\s\S]*)<\/section>/)?.[1] ?? wizardHtml;
     wizardSection.innerHTML = inner;
   }
+}
+
+/**
+ * Detect the current wizard step from the DOM.
+ * Uses characteristic elements unique to each step.
+ * @param root — the app-root element containing the wizard
+ * @returns detected step index (0-3), defaults to 0
+ */
+function detectStepFromDOM(root: HTMLElement): number {
+  const card = root.querySelector("[data-wizard-card]");
+  if (!card) return 0;
+
+  // Step 1 (Setup): has [data-copy-all]
+  if (card.querySelector("[data-copy-all]")) return 1;
+
+  // Step 2 (Connect): has [data-test-connection]
+  if (card.querySelector("[data-test-connection]")) return 2;
+
+  // Step 3 (Initialize): has [data-init-submit]
+  if (card.querySelector("[data-init-submit]")) return 3;
+
+  // Step 0 (Install): has [data-skip] and [data-next] (default)
+  if (card.querySelector("[data-skip]") || card.querySelector("[data-next]"))
+    return 0;
+
+  return 0;
 }
 
 // --- Event handlers ---
@@ -92,7 +119,8 @@ function handleTab(root: HTMLElement, tabName: string): void {
  * @param selector — CSS selector for the element containing the text to copy
  */
 async function handleCopy(target: Element, selector: string): Promise<void> {
-  const container = target.closest("div") ?? target.closest("[data-wizard-card-container]");
+  const container =
+    target.closest("div") ?? target.closest("[data-wizard-card-container]");
   const textEl = container?.querySelector(selector);
   const text = textEl?.textContent?.trim();
   if (!text) return;
@@ -102,7 +130,9 @@ async function handleCopy(target: Element, selector: string): Promise<void> {
   // Brief "Copied" feedback
   const original = target.textContent;
   target.textContent = "Copied!";
-  setTimeout(() => { target.textContent = original; }, 1500);
+  setTimeout(() => {
+    target.textContent = original;
+  }, 1500);
 }
 
 /**
@@ -110,7 +140,9 @@ async function handleCopy(target: Element, selector: string): Promise<void> {
  * @param root — the wizard root element
  */
 async function handleTestConnection(root: HTMLElement): Promise<void> {
-  const input = root.querySelector("[data-endpoint]") as HTMLInputElement | null;
+  const input = root.querySelector(
+    "[data-endpoint]",
+  ) as HTMLInputElement | null;
   const endpoint = parseEndpoint(input?.value ?? null);
   const statusEl = root.querySelector("[data-connection-status]");
 
@@ -150,10 +182,14 @@ async function handleTestConnection(root: HTMLElement): Promise<void> {
  */
 async function handleInitSubmit(
   root: HTMLElement,
-  onSaved: () => void
+  onSaved: () => void,
 ): Promise<void> {
-  const nameInput = root.querySelector("#actor-name") as HTMLInputElement | null;
-  const emailInput = root.querySelector("#actor-email") as HTMLInputElement | null;
+  const nameInput = root.querySelector(
+    "#actor-name",
+  ) as HTMLInputElement | null;
+  const emailInput = root.querySelector(
+    "#actor-email",
+  ) as HTMLInputElement | null;
   const errorEl = root.querySelector("[data-init-error]");
 
   const name = nameInput?.value?.trim() ?? "";
@@ -175,7 +211,7 @@ async function handleInitSubmit(
   }
 
   const endpoint = parseEndpoint(
-    localStorage.getItem(STORAGE_KEY_ENDPOINT) ?? DEFAULT_ENDPOINT
+    localStorage.getItem(STORAGE_KEY_ENDPOINT) ?? DEFAULT_ENDPOINT,
   );
 
   try {
@@ -201,7 +237,8 @@ async function handleInitSubmit(
   } catch {
     if (errorEl) {
       errorEl.classList.remove("hidden");
-      errorEl.textContent = "Could not reach engine. Please check your connection.";
+      errorEl.textContent =
+        "Could not reach engine. Please check your connection.";
     }
   }
 }
@@ -215,7 +252,8 @@ async function handleInitSubmit(
  * @param root — the app-root element containing the rendered wizard
  */
 export function initWizard(root: HTMLElement): void {
-  currentStep = 0;
+  // Detect current step from existing DOM instead of always starting at 0
+  currentStep = detectStepFromDOM(root);
 
   // Single delegated event listener
   root.addEventListener("click", async (event) => {

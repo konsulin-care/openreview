@@ -3,3 +3,9 @@ variables:
   - name: baseUrl
     value: http://localhost:1234
     type: default
+  - name: actorName
+    value: "Test User"
+    type: default
+  - name: actorEmail
+    value: test@example.com
+    type: default

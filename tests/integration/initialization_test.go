@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 
 	"github.com/openreview/openreview/api"
@@ -14,7 +15,13 @@ import (
 )
 
 func TestInitializationFlow(t *testing.T) {
+	// Create a temp directory for the test database
+	tmpDir := t.TempDir()
+	dbPath := filepath.Join(tmpDir, "test.sqlite")
+
 	a := app.NewApp()
+	a.SetDBPath(dbPath)
+
 	cfg := &config.Config{Port: 0, BindAddr: "127.0.0.1"}
 	srv := api.NewServer(a, cfg)
 
@@ -78,7 +85,13 @@ func TestInitializationFlow(t *testing.T) {
 }
 
 func TestPreInitGuard(t *testing.T) {
+	// Create a temp directory for the test database
+	tmpDir := t.TempDir()
+	dbPath := filepath.Join(tmpDir, "test.sqlite")
+
 	a := app.NewApp()
+	a.SetDBPath(dbPath)
+
 	cfg := &config.Config{Port: 0, BindAddr: "127.0.0.1"}
 	srv := api.NewServer(a, cfg)
 
