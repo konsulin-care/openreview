@@ -61,6 +61,8 @@ jobs:
           key: pnpm-${{ runner.os }}-${{ hashFiles('web/pnpm-lock.yaml') }}
           restore-keys: pnpm-${{ runner.os }}-
       - run: pnpm install --dir web
+      - name: Build frontend
+        run: pnpm --dir web build
       - run: mise run test --race
 
   build:
