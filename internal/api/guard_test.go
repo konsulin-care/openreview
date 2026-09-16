@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/openreview/openreview/app"
+	"github.com/konsulin-care/openreview/internal/app"
 )
 
 func TestRequireReady_WhenNew(t *testing.T) {

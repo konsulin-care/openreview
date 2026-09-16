@@ -27,6 +27,6 @@ runtime:
           expect(res.body.name).to.be.a("string");
           expect(res.body.email).to.be.a("string");
         });
-        test("get actor: chains to put actor", function() {
-          bru.runner.setNextRequest("put actor");
-        });
+    - type: postrequest
+      code: |-
+        bru.setNextRequest("put actor");

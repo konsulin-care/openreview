@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/openreview/openreview/app"
+	"github.com/konsulin-care/openreview/internal/app"
 )
 
 func TestInitializeHandler_Success(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/openreview/openreview/internal/database"
+	"github.com/konsulin-care/openreview/internal/database"
 )
 
 func TestNewApp_StateIsNew(t *testing.T) {

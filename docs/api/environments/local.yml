@@ -9,3 +9,6 @@ variables:
   - name: actorEmail
     value: test@example.com
     type: default
+  - name: projectName
+    value: "My Review"
+    type: default

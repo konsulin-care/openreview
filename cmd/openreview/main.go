@@ -8,10 +8,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/openreview/openreview/api"
-	"github.com/openreview/openreview/app"
-	"github.com/openreview/openreview/config"
-	"github.com/openreview/openreview/internal/database"
+	"github.com/konsulin-care/openreview/internal/api"
+	"github.com/konsulin-care/openreview/internal/app"
+	"github.com/konsulin-care/openreview/internal/config"
+	"github.com/konsulin-care/openreview/internal/database"
 )
 
 func main() {

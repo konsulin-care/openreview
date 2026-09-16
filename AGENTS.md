@@ -11,6 +11,7 @@ Go engine + Astro frontend, event-log as source of truth.
 - [ADRs](docs/adr/)
 - [Internal (Go)](internal/AGENTS.md)
 - [Frontend (Astro)](web/AGENTS.md)
+- [Directory Structure](docs/STRUCTURE.md)
 
 ## Build & Run
 mise install          # install pinned tools

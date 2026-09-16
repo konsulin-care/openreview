@@ -3,7 +3,7 @@ package config_test
 import (
 	"testing"
 
-	"github.com/openreview/openreview/config"
+	"github.com/konsulin-care/openreview/internal/config"
 )
 
 func TestParseFlagsDefaultCorsOrigins(t *testing.T) {

@@ -5,9 +5,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/openreview/openreview/api"
-	"github.com/openreview/openreview/app"
-	"github.com/openreview/openreview/config"
+	"github.com/konsulin-care/openreview/internal/api"
+	"github.com/konsulin-care/openreview/internal/app"
+	"github.com/konsulin-care/openreview/internal/config"
 )
 
 func TestCORS_AllowAllOrigins(t *testing.T) {

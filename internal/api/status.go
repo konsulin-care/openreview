@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/openreview/openreview/app"
+	"github.com/konsulin-care/openreview/internal/app"
 )
 
 const version = "0.1.0"

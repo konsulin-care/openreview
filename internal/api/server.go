@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/openreview/openreview/app"
-	"github.com/openreview/openreview/config"
+	"github.com/konsulin-care/openreview/internal/app"
+	"github.com/konsulin-care/openreview/internal/config"
 )
 
 // Server wraps the HTTP server with OpenReview-specific routing.
@@ -25,6 +25,7 @@ func NewServer(a *app.App, cfg *config.Config) *Server {
 	mux.HandleFunc("/api/v1/preflight", PreflightHandler())
 	mux.HandleFunc("/api/v1/initialize", InitializeHandler(a))
 	mux.HandleFunc("/api/v1/actor", ActorHandler(a))
+	mux.HandleFunc("/api/v1/project", ProjectHandler(a))
 
 	handler := corsMiddleware(cfg.CorsOrigins, mux)
 

@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/openreview/openreview/app"
-	"github.com/openreview/openreview/internal/database"
-	"github.com/openreview/openreview/internal/ulid"
+	"github.com/konsulin-care/openreview/internal/app"
+	"github.com/konsulin-care/openreview/internal/database"
+	"github.com/konsulin-care/openreview/internal/ulid"
 )
 
 type initializeRequest struct {

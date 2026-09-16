@@ -1,2 +1,4 @@
 name: project
 type: folder
+requests:
+  - POST.project.yml
