@@ -36,4 +36,5 @@ runtime:
         });
     - type: postrequest
       code: |-
+        bru.setVar("project_id", res.body.project_id);
         bru.setNextRequest("get actor");

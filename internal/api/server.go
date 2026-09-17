@@ -26,6 +26,7 @@ func NewServer(a *app.App, cfg *config.Config) *Server {
 	mux.HandleFunc("/api/v1/initialize", InitializeHandler(a))
 	mux.HandleFunc("/api/v1/actor", ActorHandler(a))
 	mux.HandleFunc("/api/v1/project", ProjectHandler(a))
+	mux.HandleFunc("/api/v1/project/", handleGetProjectById(a))
 
 	handler := corsMiddleware(cfg.CorsOrigins, mux)
 

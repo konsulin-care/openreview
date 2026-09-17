@@ -376,6 +376,7 @@ export const VIEWS: Record<EngineState, () => string> = {
     `<section>
       <h1 class="mb-4 text-3xl font-bold">Dashboard</h1>
       <p class="text-gray-600">Your review projects will appear here.</p>
+      <div id="project-list" class="mt-4 space-y-2 text-sm"></div>
     </section>`, 
 
   unhealthy: () =>

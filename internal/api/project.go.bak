@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/konsulin-care/openreview/internal/app"
 	"github.com/konsulin-care/openreview/internal/manifest"
@@ -160,65 +159,4 @@ func handleGetProjects(a *app.App, w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
-}
-
-// handleGetProjectById returns an http.HandlerFunc that retrieves a single project by ID.
-func handleGetProjectById(a *app.App) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		projectID := strings.TrimPrefix(r.URL.Path, "/api/v1/project/")
-		if projectID == "" || projectID == "/" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "project ID is required"})
-			return
-		}
-
-		// Guard: must be initialized
-		if a.State != app.StateReady {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusServiceUnavailable)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "not initialized"})
-			return
-		}
-
-		if a.DB == nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusServiceUnavailable)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "database not available"})
-			return
-		}
-
-		p, err := a.DB.GetProject(projectID)
-		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to get project"})
-			return
-		}
-
-		if p == nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "project not found"})
-			return
-		}
-
-		// Convert to JSON-serializable format
-		type projectResponse struct {
-			ID        string `json:"id"`
-			Path      string `json:"path"`
-			Name      string `json:"name"`
-			CreatedAt string `json:"created_at"`
-		}
-
-		resp := projectResponse{
-			ID:        p.ID,
-			Path:      p.Path,
-			Name:      p.Name,
-			CreatedAt: p.CreatedAt,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(resp)
-	}
 }
