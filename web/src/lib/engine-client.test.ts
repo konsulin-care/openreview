@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { EngineClient } from "./engine-client";
-import type { EngineStatus, HealthStatus } from "./engine-client";
+import type { EngineStatus, HealthStatus, Project } from "./engine-client";
 
 describe("EngineClient", () => {
   const mockEndpoint = "http://localhost:9999";
@@ -119,6 +119,91 @@ describe("EngineClient", () => {
         2,
         "http://dynamic-2:1234/api/v1/health"
       );
+    });
+  });
+
+  describe("listProjects", () => {
+    it("returns parsed Project array on 200 OK", async () => {
+      const mockProjects: Project[] = [
+        { id: "01ABC", path: "./01ABC", name: "Review A", created_at: "2026-01-01T00:00:00Z" },
+        { id: "01DEF", path: "./01DEF", name: "Review B", created_at: "2026-01-02T00:00:00Z" },
+      ];
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+        new Response(JSON.stringify(mockProjects), { status: 200 })
+      );
+
+      const client = new EngineClient({ getEndpoint: () => mockEndpoint });
+      const result = await client.listProjects();
+
+      expect(result).toEqual(mockProjects);
+      expect(fetch).toHaveBeenCalledWith(`${mockEndpoint}/api/v1/project`);
+    });
+
+    it("returns empty array when no projects exist", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+        new Response(JSON.stringify([]), { status: 200 })
+      );
+
+      const client = new EngineClient({ getEndpoint: () => mockEndpoint });
+      const result = await client.listProjects();
+
+      expect(result).toEqual([]);
+    });
+
+    it("throws on network error", async () => {
+      vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("Network failure"));
+
+      const client = new EngineClient({ getEndpoint: () => mockEndpoint });
+      await expect(client.listProjects()).rejects.toThrow("Network failure");
+    });
+
+    it("throws on non-OK status", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+        new Response("Server Error", { status: 500 })
+      );
+
+      const client = new EngineClient({ getEndpoint: () => mockEndpoint });
+      await expect(client.listProjects()).rejects.toThrow("500");
+    });
+  });
+
+  describe("createProject", () => {
+    it("returns created project on 200 OK", async () => {
+      const mockResponse = {
+        project_id: "01XYZ",
+        name: "New Review",
+        path: "./01XYZ",
+        created_at: "2026-01-01T00:00:00Z",
+      };
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+        new Response(JSON.stringify(mockResponse), { status: 200 })
+      );
+
+      const client = new EngineClient({ getEndpoint: () => mockEndpoint });
+      const result = await client.createProject("New Review");
+
+      expect(result).toEqual(mockResponse);
+      expect(fetch).toHaveBeenCalledWith(`${mockEndpoint}/api/v1/project`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "New Review" }),
+      });
+    });
+
+    it("throws on network error", async () => {
+      vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("Connection refused"));
+
+      const client = new EngineClient({ getEndpoint: () => mockEndpoint });
+      await expect(client.createProject("Test")).rejects.toThrow("Connection refused");
+    });
+
+    it("throws on non-OK status", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+        new Response("Bad Request", { status: 400 })
+      );
+
+      const client = new EngineClient({ getEndpoint: () => mockEndpoint });
+      await expect(client.createProject("Test")).rejects.toThrow("400");
     });
   });
 });

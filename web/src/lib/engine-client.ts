@@ -24,6 +24,22 @@ export interface EngineClientConfig {
   getEndpoint: () => string;
 }
 
+/** Project returned by the engine API. */
+export interface Project {
+  id: string;
+  path: string;
+  name: string;
+  created_at: string;
+}
+
+/** Response from POST /api/v1/project. */
+export interface CreateProjectResponse {
+  project_id: string;
+  name: string;
+  path: string;
+  created_at: string;
+}
+
 // --- Client ---
 
 /**
@@ -72,5 +88,40 @@ export class EngineClient {
     }
 
     return response.json() as Promise<HealthStatus>;
+  }
+
+  /**
+   * List all registered projects.
+   * @returns Array of Project objects
+   * @throws On network error or non-OK response
+   */
+  async listProjects(): Promise<Project[]> {
+    const response = await fetch(`${this.endpoint}/api/v1/project`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to list projects: ${response.status}`);
+    }
+
+    return response.json() as Promise<Project[]>;
+  }
+
+  /**
+   * Create a new project.
+   * @param name — project name
+   * @returns Created project details
+   * @throws On network error or non-OK response
+   */
+  async createProject(name: string): Promise<CreateProjectResponse> {
+    const response = await fetch(`${this.endpoint}/api/v1/project`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to create project: ${response.status}`);
+    }
+
+    return response.json() as Promise<CreateProjectResponse>;
   }
 }
