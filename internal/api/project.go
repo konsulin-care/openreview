@@ -41,7 +41,9 @@ func handleCreateProject(a *app.App, w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Name string `json:"name"`
+		Name        string `json:"name"`
+		Path        string `json:"path"`
+		Description string `json:"description"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -57,6 +59,16 @@ func handleCreateProject(a *app.App, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate custom path if provided
+	if req.Path != "" {
+		if !filepath.IsAbs(req.Path) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "path must be an absolute path"})
+			return
+		}
+	}
+
 	// Generate ULID for project
 	projectID, err := ulid.Make()
 	if err != nil {
@@ -66,15 +78,20 @@ func handleCreateProject(a *app.App, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create project directory structure
-	projectDir, err := database.ProjectDir()
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to resolve data directory"})
-		return
+	// Determine project path: use custom path or default
+	var projectPath string
+	if req.Path != "" {
+		projectPath = req.Path
+	} else {
+		projectDir, err := database.ProjectDir()
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to resolve data directory"})
+			return
+		}
+		projectPath = filepath.Join(projectDir, projectID)
 	}
-	projectPath := filepath.Join(projectDir, projectID)
 	for _, dir := range []string{"events", "papers", "exports"} {
 		if err := os.MkdirAll(filepath.Join(projectPath, dir), 0o755); err != nil {
 			w.Header().Set("Content-Type", "application/json")
@@ -86,6 +103,9 @@ func handleCreateProject(a *app.App, w http.ResponseWriter, r *http.Request) {
 
 	// Create and write manifest
 	m := manifest.New(projectID, req.Name)
+	if req.Description != "" {
+		m.SetDescription(req.Description)
+	}
 	if err := m.Validate(); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)

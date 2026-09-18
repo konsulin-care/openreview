@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -112,6 +113,98 @@ func TestProjectHandler_POST_MissingBody(t *testing.T) {
 
 	handler := ProjectHandler(a)
 	body := `{}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/project", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusBadRequest)
+	}
+}
+
+func TestProjectHandler_POST_WithCustomPath(t *testing.T) {
+	a := app.NewApp()
+	initializeAndClose(t, a)
+
+	// Create a temp directory for the custom path
+	tmpDir := t.TempDir()
+	customPath := filepath.Join(tmpDir, "my-custom-project")
+
+	handler := ProjectHandler(a)
+	body := fmt.Sprintf(`{"name":"Custom Path Project","path":"%s"}`, customPath)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/project", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	var resp map[string]string
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+
+	if resp["path"] != customPath {
+		t.Errorf("path = %q, want %q", resp["path"], customPath)
+	}
+
+	// Verify directory was created at custom path
+	for _, dir := range []string{"events", "papers", "exports"} {
+		if _, err := os.Stat(filepath.Join(customPath, dir)); os.IsNotExist(err) {
+			t.Errorf("directory %s not created", filepath.Join(customPath, dir))
+		}
+	}
+
+	// Verify manifest file exists
+	manifestPath := filepath.Join(customPath, "openreview.yml")
+	if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
+		t.Errorf("manifest file not created at %s", manifestPath)
+	}
+}
+
+func TestProjectHandler_POST_WithDescription(t *testing.T) {
+	a := app.NewApp()
+	initializeAndClose(t, a)
+
+	handler := ProjectHandler(a)
+	body := `{"name":"Described Project","description":"A project with description"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/project", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	var resp map[string]string
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+
+	// Verify manifest contains description
+	manifestPath := filepath.Join(resp["path"], "openreview.yml")
+	data, err := os.ReadFile(manifestPath)
+	if err != nil {
+		t.Fatalf("read manifest: %v", err)
+	}
+	if !strings.Contains(string(data), "A project with description") {
+		t.Error("manifest should contain description")
+	}
+}
+
+func TestProjectHandler_POST_RelativePathRejected(t *testing.T) {
+	a := app.NewApp()
+	initializeAndClose(t, a)
+
+	handler := ProjectHandler(a)
+	body := `{"name":"Relative Path","path":"relative/path"}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/project", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()

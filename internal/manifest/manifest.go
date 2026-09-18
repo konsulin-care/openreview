@@ -17,6 +17,7 @@ type Manifest struct {
 	SchemaVersion string `yaml:"schema_version"`
 	ProjectID     string `yaml:"project_id"`
 	Name          string `yaml:"name"`
+	Description   string `yaml:"description,omitempty"`
 	CreatedAt     string `yaml:"created_at"`
 }
 
@@ -29,6 +30,12 @@ func New(projectID, name string) *Manifest {
 		Name:          name,
 		CreatedAt:     time.Now().UTC().Format(time.RFC3339),
 	}
+}
+
+// SetDescription sets the project description.
+func (m *Manifest) SetDescription(description string) *Manifest {
+	m.Description = description
+	return m
 }
 
 // Parse reads and unmarshals a YAML manifest from the given byte slice.
