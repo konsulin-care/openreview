@@ -33,7 +33,7 @@ function createDashboardDom(): void {
   document.body.innerHTML = `
     <div id="project-grid"></div>
     <div id="empty-state" class="hidden"></div>
-    <button id="action-btn" type="button" class="min-w-[140px] rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">+ New Project</button>
+    <button id="action-btn" type="button" class="hidden min-w-[140px] rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">+ New Project</button>
     <button id="clear-selection-btn" type="button" class="hidden min-w-[140px] rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Clear</button>
     <div id="select-all-bar" class="hidden">
       <label class="flex items-center gap-2 cursor-pointer">
@@ -92,6 +92,23 @@ describe("initDashboard", () => {
 
     expect(grid?.innerHTML).toBe("");
     expect(emptyState?.classList.contains("hidden")).toBe(false);
+  });
+
+  it("hides action-btn when no projects exist", async () => {
+    mockListProjects.mockReset();
+    mockListProjects.mockResolvedValue([]);
+
+    await initDashboard();
+
+    const btn = document.getElementById("action-btn")!;
+    expect(btn.classList.contains("hidden")).toBe(true);
+  });
+
+  it("shows action-btn when projects exist", async () => {
+    await initDashboard();
+
+    const btn = document.getElementById("action-btn")!;
+    expect(btn.classList.contains("hidden")).toBe(false);
   });
 
   it("fetches projects exactly once when list is empty", async () => {

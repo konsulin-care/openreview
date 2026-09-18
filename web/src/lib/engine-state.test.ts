@@ -266,6 +266,14 @@ describe("VIEWS", () => {
     expect(html).toContain("min-w-");
   });
 
+  it("healthy action-btn has hidden class by default", () => {
+    const html = VIEWS.healthy();
+    // The action-btn should start hidden; initDashboard shows it when projects exist
+    const actionBtnMatch = html.match(/id="action-btn"[^>]*class="([^"]*)"/);
+    expect(actionBtnMatch).not.toBeNull();
+    expect(actionBtnMatch![1]).toContain("hidden");
+  });
+
   it("healthy contains hidden clear-selection-btn", () => {
     const html = VIEWS.healthy();
     expect(html).toContain('id="clear-selection-btn"');

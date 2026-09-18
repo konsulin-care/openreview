@@ -85,7 +85,10 @@ export async function initDashboard(): Promise<void> {
     if (count === 0) {
       // Default state: "+ New Project" button (blue)
       actionBtnEl.textContent = "+ New Project";
-      actionBtnEl.className = "min-w-[140px] rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700";
+      // Hide button when no projects, show when projects exist
+      actionBtnEl.className = projects.length === 0
+        ? "hidden min-w-[140px] rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        : "min-w-[140px] rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700";
       actionBtnEl.onclick = () => openModal();
 
       // Hide clear button and select-all bar
@@ -147,6 +150,11 @@ export async function initDashboard(): Promise<void> {
 
   // Load projects on init
   await refreshProjects();
+
+  // Show/hide action-btn based on project count
+  if (projects.length > 0) {
+    actionBtnEl.classList.remove("hidden");
+  }
 
   // Set initial button state
   actionBtnEl.onclick = () => openModal();

@@ -378,7 +378,7 @@ export const VIEWS: Record<EngineState, () => string> = {
         <h1 class="text-3xl font-bold">Dashboard</h1>
         <div class="flex items-center gap-3">
           <button id="clear-selection-btn" type="button" class="hidden min-w-[140px] rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Clear</button>
-          <button id="action-btn" type="button" class="min-w-[140px] rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">+ New Project</button>
+          <button id="action-btn" type="button" class="hidden min-w-[140px] rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">+ New Project</button>
         </div>
       </div>
 
