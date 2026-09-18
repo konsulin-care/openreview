@@ -144,11 +144,11 @@ describe("renderEmptyState", () => {
 
   it("contains description text", () => {
     const html = renderEmptyState();
-    expect(html).toContain("Create your first project");
+    expect(html).toContain("Start your first systematic review today.");
   });
 
   it("contains CTA button", () => {
     const html = renderEmptyState();
-    expect(html).toContain("Create Project");
+    expect(html).toContain("Start a Project");
   });
 });

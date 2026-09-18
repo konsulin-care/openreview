@@ -167,6 +167,33 @@ func TestProjectHandler_GET_Success(t *testing.T) {
 	}
 }
 
+func TestProjectHandler_GET_Empty(t *testing.T) {
+	a := app.NewApp()
+	initializeAndClose(t, a)
+
+	handler := ProjectHandler(a)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/project", nil)
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	// Body must be a valid JSON array, not null
+	body := w.Body.Bytes()
+	if len(body) == 0 {
+		t.Fatal("body is empty")
+	}
+	if string(body) == "null" {
+		t.Error("body is null, want a JSON array")
+	}
+	if body[0] != '[' {
+		t.Errorf("body starts with %c, want [", body[0])
+	}
+}
+
 func TestProjectHandler_GET_NotInitialized(t *testing.T) {
 	a := app.NewApp()
 

@@ -156,7 +156,7 @@ func handleGetProjects(a *app.App, w http.ResponseWriter, r *http.Request) {
 		CreatedAt string `json:"created_at"`
 	}
 
-	var resp []projectResponse
+	resp := make([]projectResponse, 0)
 	for _, p := range projects {
 		resp = append(resp, projectResponse{
 			ID:        p.ID,

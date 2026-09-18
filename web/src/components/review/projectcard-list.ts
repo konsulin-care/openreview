@@ -50,8 +50,8 @@ export function renderEmptyState(): string {
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
     </svg>
     <h2 class="mt-4 text-lg font-semibold text-gray-900">No projects yet</h2>
-    <p class="mt-1 text-sm text-gray-500">Create your first project to start screening papers.</p>
-    <button id="empty-state-cta" type="button" class="mt-4 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Create Project</button>`;
+    <p class="mt-1 text-sm text-gray-500">Start your first systematic review today.</p>
+    <button id="empty-state-cta" type="button" class="mt-4 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Start a Project</button>`;
 }
 
 /**
