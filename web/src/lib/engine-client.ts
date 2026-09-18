@@ -124,4 +124,22 @@ export class EngineClient {
 
     return response.json() as Promise<CreateProjectResponse>;
   }
+
+  /**
+   * Delete a project by ID. Removes from registry and deletes directory from disk.
+   * @param id — project ID (ULID)
+   * @returns Deleted project details
+   * @throws On network error or non-OK response
+   */
+  async deleteProject(id: string): Promise<{ project_id: string; name: string }> {
+    const response = await fetch(`${this.endpoint}/api/v1/project/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete project: ${response.status}`);
+    }
+
+    return response.json() as Promise<{ project_id: string; name: string }>;
+  }
 }

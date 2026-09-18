@@ -1,10 +1,10 @@
 info:
-  name: get project by id
+  name: delete project
   type: http
-  seq: 6
+  seq: 7
 
 http:
-  method: GET
+  method: DELETE
   url: "{{baseUrl}}/api/v1/project/{{project_id}}"
   header:
     - name: Content-Type
@@ -15,20 +15,17 @@ runtime:
     - expression: res.status
       operator: eq
       value: "200"
-    - expression: res.body.id
+    - expression: res.body.project_id
       operator: isString
     - expression: res.body.name
-      operator: isString
-    - expression: res.body.path
       operator: isString
   scripts:
     - type: tests
       code: |-
-        test("project by id: returns project details", function() {
-          expect(res.body.id).to.be.a("string");
+        test("delete project: returns project_id and name", function() {
+          expect(res.body.project_id).to.be.a("string");
           expect(res.body.name).to.be.a("string");
-          expect(res.body.path).to.be.a("string");
         });
     - type: postrequest
       code: |-
-        bru.setNextRequest("delete project");
+        bru.setNextRequest("get actor");

@@ -23,4 +23,4 @@ runtime:
         });
     - type: postrequest
       code: |-
-        bru.setNextRequest("get actor");
+        bru.setNextRequest("get project by id");

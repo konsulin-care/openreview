@@ -2,9 +2,78 @@ import { describe, it, expect } from "vitest";
 import { renderProjectCards, renderEmptyState } from "./projectcard-list";
 import type { Project } from "../../lib/engine-client";
 
+const mockProjects: Project[] = [
+  { id: "01ABC", path: "/tmp/01ABC", name: "Review A", created_at: "2026-01-01" },
+  { id: "01DEF", path: "/tmp/01DEF", name: "Review B", created_at: "2026-01-02" },
+];
+
 describe("renderProjectCards", () => {
   it("returns empty string for empty array", () => {
     expect(renderProjectCards([])).toBe("");
+  });
+
+  it("includes data-project-id on each card", () => {
+    const html = renderProjectCards(mockProjects);
+    expect(html).toContain('data-project-id="01ABC"');
+    expect(html).toContain('data-project-id="01DEF"');
+  });
+
+  it("includes checkbox with data-select-project on each card", () => {
+    const html = renderProjectCards(mockProjects);
+    expect(html).toContain('data-select-project="01ABC"');
+    expect(html).toContain('data-select-project="01DEF"');
+    expect(html).toContain('type="checkbox"');
+  });
+
+  it("does not check checkboxes when selectedIds is empty", () => {
+    const html = renderProjectCards(mockProjects, new Set());
+    // Find checkbox inputs — they should not have checked attribute
+    const checkboxRegex = /<input[^>]*data-select-project[^>]*>/g;
+    const matches = html.match(checkboxRegex) || [];
+    for (const match of matches) {
+      expect(match).not.toContain("checked");
+    }
+  });
+
+  it("applies selected class when ID is in selectedIds", () => {
+    const selected = new Set(["01ABC"]);
+    const html = renderProjectCards(mockProjects, selected);
+    // The card with 01ABC should have ring-2 ring-blue-500
+    const cardRegex = /<div data-project-id="01ABC"[^>]*class="([^"]*)"/;
+    const match = html.match(cardRegex);
+    expect(match).not.toBeNull();
+    expect(match![1]).toContain("ring-2");
+    expect(match![1]).toContain("ring-blue-500");
+  });
+
+  it("does not apply selected class when ID is not in selectedIds", () => {
+    const selected = new Set(["01ABC"]);
+    const html = renderProjectCards(mockProjects, selected);
+    const cardRegex = /<div data-project-id="01DEF"[^>]*class="([^"]*)"/;
+    const match = html.match(cardRegex);
+    expect(match).not.toBeNull();
+    expect(match![1]).not.toContain("ring-2");
+  });
+
+  it("marks selected checkbox as checked", () => {
+    const selected = new Set(["01DEF"]);
+    const html = renderProjectCards(mockProjects, selected);
+    const checkboxRegex = /<input[^>]*data-select-project="01DEF"[^>]*>/;
+    const match = html.match(checkboxRegex);
+    expect(match).not.toBeNull();
+    expect(match![0]).toContain("checked");
+  });
+
+  it("makes checkboxes always visible when any selection exists", () => {
+    const selected = new Set(["01ABC"]);
+    const html = renderProjectCards(mockProjects, selected);
+    expect(html).toContain("!opacity-100");
+  });
+
+  it("hides checkboxes when no selection exists", () => {
+    const html = renderProjectCards(mockProjects, new Set());
+    expect(html).toContain("opacity-0");
+    expect(html).not.toContain("!opacity-100");
   });
 
   it("renders a single project card with link", () => {

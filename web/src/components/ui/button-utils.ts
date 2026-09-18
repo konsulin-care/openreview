@@ -2,7 +2,7 @@
  * Button class mapping logic, extracted for testability.
  */
 
-export type ButtonVariant = "primary" | "secondary" | "ghost";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
@@ -15,6 +15,7 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary: "bg-blue-600 text-white hover:bg-blue-700",
   secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200",
   ghost: "text-gray-600 hover:text-gray-900 hover:bg-gray-100",
+  danger: "bg-red-600 text-white hover:bg-red-700",
 };
 
 const BASE_CLASSES =

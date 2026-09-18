@@ -180,3 +180,96 @@ func TestProjectHandler_GET_NotInitialized(t *testing.T) {
 		t.Errorf("status = %d, want %d", w.Code, http.StatusServiceUnavailable)
 	}
 }
+
+func TestProjectHandler_DELETE_Success(t *testing.T) {
+	a := app.NewApp()
+	initializeAndClose(t, a)
+
+	// Create a project first
+	handler := ProjectHandler(a)
+	createBody := `{"name":"To Delete"}`
+	createReq := httptest.NewRequest(http.MethodPost, "/api/v1/project", bytes.NewBufferString(createBody))
+	createReq.Header.Set("Content-Type", "application/json")
+	createW := httptest.NewRecorder()
+	handler.ServeHTTP(createW, createReq)
+
+	if createW.Code != http.StatusOK {
+		t.Fatalf("create project failed: status %d", createW.Code)
+	}
+
+	var createResp map[string]string
+	_ = json.Unmarshal(createW.Body.Bytes(), &createResp)
+	projectID := createResp["project_id"]
+	projectPath := createResp["path"]
+
+	// Verify directory exists before delete
+	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
+		t.Fatalf("project directory should exist before delete: %s", projectPath)
+	}
+
+	// DELETE the project
+	deleteHandler := handleGetProjectById(a)
+	deleteReq := httptest.NewRequest(http.MethodDelete, "/api/v1/project/"+projectID, nil)
+	deleteW := httptest.NewRecorder()
+	deleteHandler.ServeHTTP(deleteW, deleteReq)
+
+	if deleteW.Code != http.StatusOK {
+		t.Errorf("delete status = %d, want %d", deleteW.Code, http.StatusOK)
+	}
+
+	var deleteResp map[string]string
+	if err := json.Unmarshal(deleteW.Body.Bytes(), &deleteResp); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	if deleteResp["project_id"] != projectID {
+		t.Errorf("project_id = %q, want %q", deleteResp["project_id"], projectID)
+	}
+	if deleteResp["name"] != "To Delete" {
+		t.Errorf("name = %q, want %q", deleteResp["name"], "To Delete")
+	}
+
+	// Verify directory was removed from disk
+	if _, err := os.Stat(projectPath); !os.IsNotExist(err) {
+		t.Errorf("project directory should be removed after delete: %s", projectPath)
+	}
+
+	// Verify project is gone from list
+	listReq := httptest.NewRequest(http.MethodGet, "/api/v1/project", nil)
+	listW := httptest.NewRecorder()
+	handler.ServeHTTP(listW, listReq)
+
+	var projects []map[string]string
+	_ = json.Unmarshal(listW.Body.Bytes(), &projects)
+	for _, p := range projects {
+		if p["id"] == projectID {
+			t.Error("deleted project should not appear in list")
+		}
+	}
+}
+
+func TestProjectHandler_DELETE_NotFound(t *testing.T) {
+	a := app.NewApp()
+	initializeAndClose(t, a)
+
+	handler := handleGetProjectById(a)
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/project/01ABC000000000000000000", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusNotFound)
+	}
+}
+
+func TestProjectHandler_DELETE_NotInitialized(t *testing.T) {
+	a := app.NewApp()
+
+	handler := handleGetProjectById(a)
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/project/01ABC000000000000000000", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusServiceUnavailable {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusServiceUnavailable)
+	}
+}

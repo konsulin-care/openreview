@@ -170,7 +170,7 @@ func handleGetProjects(a *app.App, w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-// handleGetProjectById returns an http.HandlerFunc that retrieves a single project by ID.
+// handleGetProjectById returns an http.HandlerFunc that retrieves or deletes a single project by ID.
 func handleGetProjectById(a *app.App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		projectID := strings.TrimPrefix(r.URL.Path, "/api/v1/project/")
@@ -196,37 +196,92 @@ func handleGetProjectById(a *app.App) http.HandlerFunc {
 			return
 		}
 
-		p, err := a.DB.GetProject(projectID)
-		if err != nil {
+		switch r.Method {
+		case http.MethodGet:
+			handleGetProjectByIdGET(a, w, projectID)
+		case http.MethodDelete:
+			handleDeleteProject(a, w, r, projectID)
+		default:
 			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to get project"})
-			return
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "method not allowed"})
 		}
-
-		if p == nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "project not found"})
-			return
-		}
-
-		// Convert to JSON-serializable format
-		type projectResponse struct {
-			ID        string `json:"id"`
-			Path      string `json:"path"`
-			Name      string `json:"name"`
-			CreatedAt string `json:"created_at"`
-		}
-
-		resp := projectResponse{
-			ID:        p.ID,
-			Path:      p.Path,
-			Name:      p.Name,
-			CreatedAt: p.CreatedAt,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(resp)
 	}
+}
+
+// handleGetProjectByIdGET retrieves a single project by ID.
+func handleGetProjectByIdGET(a *app.App, w http.ResponseWriter, projectID string) {
+	p, err := a.DB.GetProject(projectID)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to get project"})
+		return
+	}
+
+	if p == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "project not found"})
+		return
+	}
+
+	// Convert to JSON-serializable format
+	type projectResponse struct {
+		ID        string `json:"id"`
+		Path      string `json:"path"`
+		Name      string `json:"name"`
+		CreatedAt string `json:"created_at"`
+	}
+
+	resp := projectResponse{
+		ID:        p.ID,
+		Path:      p.Path,
+		Name:      p.Name,
+		CreatedAt: p.CreatedAt,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+// handleDeleteProject removes a project from the registry and deletes its directory from disk.
+func handleDeleteProject(a *app.App, w http.ResponseWriter, r *http.Request, projectID string) {
+	// Get project to find its path before deletion
+	p, err := a.DB.GetProject(projectID)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to get project"})
+		return
+	}
+
+	if p == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "project not found"})
+		return
+	}
+
+	// Remove project directory from disk
+	if err := os.RemoveAll(p.Path); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to remove project directory"})
+		return
+	}
+
+	// Unregister from master DB
+	if err := a.DB.DeleteProject(projectID); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to delete project"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"project_id": projectID,
+		"name":       p.Name,
+	})
 }

@@ -173,6 +173,20 @@ func (m *MasterDB) UpdateProject(id, path, name string) error {
 	return nil
 }
 
+// DeleteProject removes a project from the registry by ID.
+// Returns an error if the project does not exist.
+func (m *MasterDB) DeleteProject(id string) error {
+	result, err := m.db.Exec("DELETE FROM project WHERE id = ?", id)
+	if err != nil {
+		return fmt.Errorf("delete project: %w", err)
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("delete project: not found")
+	}
+	return nil
+}
+
 // UpdateActor updates the name and email of an existing actor.
 func (m *MasterDB) UpdateActor(id, name, email string) error {
 	result, err := m.db.Exec(
