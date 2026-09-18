@@ -94,6 +94,15 @@ describe("initDashboard", () => {
     expect(emptyState?.classList.contains("hidden")).toBe(false);
   });
 
+  it("fetches projects exactly once when list is empty", async () => {
+    mockListProjects.mockReset();
+    mockListProjects.mockResolvedValue([]);
+
+    await initDashboard();
+
+    expect(mockListProjects).toHaveBeenCalledTimes(1);
+  });
+
   it("opens modal when action-btn is clicked with no selection", async () => {
     await initDashboard();
 

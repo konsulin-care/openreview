@@ -50,6 +50,7 @@ export async function initDashboard(): Promise<void> {
   // --- Selection state ---
   const selectedIds = new Set<string>();
   let projects: Project[] = [];
+  let refreshing = false;
 
   /** Open the create-project modal. */
   function openModal(): void {
@@ -123,6 +124,8 @@ export async function initDashboard(): Promise<void> {
 
   /** Refresh the project list from the engine. */
   async function refreshProjects(): Promise<void> {
+    if (refreshing) return;
+    refreshing = true;
     try {
       projects = await client.listProjects();
 
@@ -137,6 +140,8 @@ export async function initDashboard(): Promise<void> {
       }
     } catch (err) {
       console.error("[dashboard] failed to load projects:", err);
+    } finally {
+      refreshing = false;
     }
   }
 
