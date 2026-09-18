@@ -118,6 +118,17 @@ describe("renderProjectCards", () => {
 
     expect(html).toContain("2026-01-01");
   });
+
+  it("positions checkbox vertically centered on left edge", () => {
+    const html = renderProjectCards(mockProjects);
+    expect(html).toContain("left-3 top-1/2 -translate-y-1/2");
+    expect(html).not.toContain("top-3 left-3");
+  });
+
+  it("adds padding-left to card link to avoid overlap with checkbox", () => {
+    const html = renderProjectCards(mockProjects);
+    expect(html).toContain('class="block pl-8"');
+  });
 });
 
 describe("renderEmptyState", () => {

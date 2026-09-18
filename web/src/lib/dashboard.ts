@@ -17,19 +17,17 @@ export async function initDashboard(): Promise<void> {
   const grid = document.getElementById("project-grid");
   const emptyState = document.getElementById("empty-state");
   const modal = document.getElementById("create-modal");
-  const newProjectBtn = document.getElementById("new-project-btn");
+  const actionBtn = document.getElementById("action-btn");
+  const clearSelectionBtn = document.getElementById("clear-selection-btn");
+  const selectAllBar = document.getElementById("select-all-bar");
+  const selectAllCheckbox = document.getElementById("select-all-checkbox") as HTMLInputElement | null;
+  const selectCount = document.getElementById("select-count");
+  const totalCount = document.getElementById("total-count");
   const modalBackdrop = document.getElementById("modal-backdrop");
   const modalCancel = document.getElementById("modal-cancel");
   const modalCreate = document.getElementById("modal-create");
   const modalError = document.getElementById("modal-error");
   const nameInput = document.getElementById("project-name") as HTMLInputElement | null;
-
-  // Selection elements
-  const selectionBar = document.getElementById("selection-bar");
-  const selectionCount = document.getElementById("selection-count");
-  const deleteCount = document.getElementById("delete-count");
-  const clearSelectionBtn = document.getElementById("clear-selection");
-  const deleteSelectedBtn = document.getElementById("delete-selected");
   const deleteConfirmModal = document.getElementById("delete-confirm-modal");
   const deleteModalBackdrop = document.getElementById("delete-modal-backdrop");
   const deleteConfirmCancel = document.getElementById("delete-confirm-cancel");
@@ -37,13 +35,17 @@ export async function initDashboard(): Promise<void> {
   const deleteConfirmText = document.getElementById("delete-confirm-text");
   const deleteConfirmError = document.getElementById("delete-confirm-error");
 
-  if (!grid || !emptyState || !modal || !newProjectBtn || !nameInput) return;
+  if (!grid || !emptyState || !modal || !actionBtn || !nameInput) return;
 
   // Narrow types for nested closures
   const gridEl = grid;
   const emptyStateEl = emptyState;
   const modalEl = modal;
   const nameInputEl = nameInput;
+  const actionBtnEl = actionBtn;
+  const clearSelectionBtnEl = clearSelectionBtn;
+  const selectAllBarEl = selectAllBar;
+  const selectAllCheckboxEl = selectAllCheckbox;
 
   // --- Selection state ---
   const selectedIds = new Set<string>();
@@ -62,15 +64,53 @@ export async function initDashboard(): Promise<void> {
     modalEl.classList.add("hidden");
   }
 
-  /** Update selection bar visibility and counts. */
+  /** Open the delete confirmation modal. */
+  function openDeleteModal(): void {
+    const names = projects
+      .filter((p) => selectedIds.has(p.id))
+      .map((p) => `"${p.name}"`)
+      .join(", ");
+    if (deleteConfirmText) {
+      deleteConfirmText.textContent = `This will permanently remove ${names} from disk. This cannot be undone.`;
+    }
+    deleteConfirmModal?.classList.remove("hidden");
+    deleteConfirmError?.classList.add("hidden");
+  }
+
+  /** Update selection UI: button transformation, counts, visibility. */
   function updateSelectionUI(): void {
     const count = selectedIds.size;
+
     if (count === 0) {
-      selectionBar?.classList.add("hidden");
+      // Default state: "+ New Project" button (blue)
+      actionBtnEl.textContent = "+ New Project";
+      actionBtnEl.className = "min-w-[140px] rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700";
+      actionBtnEl.onclick = () => openModal();
+
+      // Hide clear button and select-all bar
+      clearSelectionBtnEl?.classList.add("hidden");
+      selectAllBarEl?.classList.add("hidden");
+
+      // Reset select-all checkbox
+      if (selectAllCheckboxEl) selectAllCheckboxEl.checked = false;
     } else {
-      selectionBar?.classList.remove("hidden");
-      if (selectionCount) selectionCount.textContent = `${count} selected`;
-      if (deleteCount) deleteCount.textContent = String(count);
+      // Selection state: "Delete" button (red)
+      actionBtnEl.textContent = "Delete";
+      actionBtnEl.className = "min-w-[140px] rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700";
+      actionBtnEl.onclick = () => openDeleteModal();
+
+      // Show clear button and select-all bar
+      clearSelectionBtnEl?.classList.remove("hidden");
+      selectAllBarEl?.classList.remove("hidden");
+
+      // Update counts
+      if (selectCount) selectCount.textContent = String(count);
+      if (totalCount) totalCount.textContent = String(projects.length);
+
+      // Update select-all checkbox state
+      if (selectAllCheckboxEl) {
+        selectAllCheckboxEl.checked = count === projects.length;
+      }
     }
   }
 
@@ -103,8 +143,8 @@ export async function initDashboard(): Promise<void> {
   // Load projects on init
   await refreshProjects();
 
-  // Wire new-project buttons
-  newProjectBtn.addEventListener("click", openModal);
+  // Set initial button state
+  actionBtnEl.onclick = () => openModal();
 
   // Wire empty-state CTA (delegated in case innerHTML is replaced)
   emptyState.addEventListener("click", (e) => {
@@ -160,7 +200,7 @@ export async function initDashboard(): Promise<void> {
   });
 
   // Wire checkbox clicks (event delegation on grid)
-  gridEl.addEventListener("change", (e) => {
+  gridEl.addEventListener("change", async (e) => {
     const target = e.target as HTMLInputElement;
     if (!target.dataset.selectProject) return;
     const id = target.dataset.selectProject;
@@ -170,23 +210,25 @@ export async function initDashboard(): Promise<void> {
       selectedIds.delete(id);
     }
     updateSelectionUI();
-    refreshProjects();
+    await refreshProjects();
   });
 
   // Wire clear selection
-  clearSelectionBtn?.addEventListener("click", clearSelection);
+  clearSelectionBtnEl?.addEventListener("click", clearSelection);
 
-  // Wire delete button → open confirmation
-  deleteSelectedBtn?.addEventListener("click", () => {
-    const names = projects
-      .filter((p) => selectedIds.has(p.id))
-      .map((p) => `"${p.name}"`)
-      .join(", ");
-    if (deleteConfirmText) {
-      deleteConfirmText.textContent = `This will permanently remove ${names} from disk. This cannot be undone.`;
+  // Wire select-all checkbox
+  selectAllCheckboxEl?.addEventListener("change", async () => {
+    if (selectAllCheckboxEl.checked) {
+      // Select all projects
+      for (const p of projects) {
+        selectedIds.add(p.id);
+      }
+    } else {
+      // Deselect all
+      selectedIds.clear();
     }
-    deleteConfirmModal?.classList.remove("hidden");
-    deleteConfirmError?.classList.add("hidden");
+    updateSelectionUI();
+    await refreshProjects();
   });
 
   // Wire confirmation modal cancel

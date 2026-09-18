@@ -26,11 +26,11 @@ export function renderProjectCards(
         const checkboxVisible = selectedIds.size > 0 ? " !opacity-100" : "";
         return `
       <div data-project-id="${p.id}" class="group relative block rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md${selectedClass}">
-        <label class="absolute top-3 left-3 z-10 cursor-pointer opacity-0 transition-opacity${checkboxVisible}">
+        <label class="absolute left-3 top-1/2 -translate-y-1/2 z-10 cursor-pointer opacity-0 transition-opacity${checkboxVisible}">
           <input type="checkbox" data-select-project="${p.id}" ${checked}
             class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
         </label>
-        <a href="/project?id=${p.id}" class="block">
+        <a href="/project?id=${p.id}" class="block pl-8">
           <h3 class="text-lg font-semibold text-gray-900">${escapeHtml(p.name)}</h3>
           <p class="mt-1 text-xs text-gray-500">Created ${escapeHtml(p.created_at)}</p>
         </a>

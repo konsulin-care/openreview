@@ -255,6 +255,31 @@ describe("VIEWS", () => {
     expect(html).toContain("Dashboard");
   });
 
+  it("healthy does not contain selection-bar element", () => {
+    const html = VIEWS.healthy();
+    expect(html).not.toContain('id="selection-bar"');
+  });
+
+  it("healthy contains action-btn with min-w for consistent width", () => {
+    const html = VIEWS.healthy();
+    expect(html).toContain('id="action-btn"');
+    expect(html).toContain("min-w-");
+  });
+
+  it("healthy contains hidden clear-selection-btn", () => {
+    const html = VIEWS.healthy();
+    expect(html).toContain('id="clear-selection-btn"');
+    expect(html).toContain('class="hidden');
+  });
+
+  it("healthy contains hidden select-all-bar with checkbox", () => {
+    const html = VIEWS.healthy();
+    expect(html).toContain('id="select-all-bar"');
+    expect(html).toContain('id="select-all-checkbox"');
+    expect(html).toContain('id="select-count"');
+    expect(html).toContain('id="total-count"');
+  });
+
   it("unhealthy returns non-empty string", () => {
     expect(VIEWS.unhealthy().length).toBeGreaterThan(0);
   });
