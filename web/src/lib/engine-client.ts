@@ -40,6 +40,11 @@ export interface CreateProjectResponse {
   created_at: string;
 }
 
+/** Response from GET /api/v1/config. */
+export interface EngineConfig {
+  project_dir: string;
+}
+
 // --- Client ---
 
 /**
@@ -123,6 +128,21 @@ export class EngineClient {
     }
 
     return response.json() as Promise<CreateProjectResponse>;
+  }
+
+  /**
+   * Fetch engine configuration (e.g., default project directory).
+   * @returns Parsed EngineConfig
+   * @throws On network error or non-OK response
+   */
+  async getConfig(): Promise<EngineConfig> {
+    const response = await fetch(`${this.endpoint}/api/v1/config`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch config: ${response.status}`);
+    }
+
+    return response.json() as Promise<EngineConfig>;
   }
 
   /**

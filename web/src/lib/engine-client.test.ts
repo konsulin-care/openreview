@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { EngineClient } from "./engine-client";
-import type { EngineStatus, HealthStatus, Project } from "./engine-client";
+import type { EngineStatus, HealthStatus, Project, EngineConfig } from "./engine-client";
 
 describe("EngineClient", () => {
   const mockEndpoint = "http://localhost:9999";
@@ -204,6 +204,37 @@ describe("EngineClient", () => {
 
       const client = new EngineClient({ getEndpoint: () => mockEndpoint });
       await expect(client.createProject("Test")).rejects.toThrow("400");
+    });
+  });
+
+  describe("getConfig", () => {
+    it("returns parsed EngineConfig on 200 OK", async () => {
+      const mockConfig: EngineConfig = { project_dir: "/home/user/.local/share/openreview/projects" };
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+        new Response(JSON.stringify(mockConfig), { status: 200 })
+      );
+
+      const client = new EngineClient({ getEndpoint: () => mockEndpoint });
+      const result = await client.getConfig();
+
+      expect(result).toEqual(mockConfig);
+      expect(fetch).toHaveBeenCalledWith(`${mockEndpoint}/api/v1/config`);
+    });
+
+    it("throws on network error", async () => {
+      vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("Network failure"));
+
+      const client = new EngineClient({ getEndpoint: () => mockEndpoint });
+      await expect(client.getConfig()).rejects.toThrow("Network failure");
+    });
+
+    it("throws on non-OK status", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+        new Response("Server Error", { status: 500 })
+      );
+
+      const client = new EngineClient({ getEndpoint: () => mockEndpoint });
+      await expect(client.getConfig()).rejects.toThrow("500");
     });
   });
 });
