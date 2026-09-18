@@ -143,6 +143,22 @@ export async function initDashboard(): Promise<void> {
 
   // --- Multi-select wiring ---
 
+  // Show checkbox on card hover, hide when mouse leaves (event delegation)
+  gridEl.addEventListener("mouseover", (e) => {
+    const card = (e.target as HTMLElement).closest("[data-project-id]");
+    if (!card) return;
+    const label = card.querySelector("label");
+    if (label) label.style.opacity = "1";
+  });
+  gridEl.addEventListener("mouseout", (e) => {
+    const card = (e.target as HTMLElement).closest("[data-project-id]");
+    if (!card) return;
+    const checkbox = card.querySelector("input[type=checkbox]") as HTMLInputElement | null;
+    if (checkbox?.checked) return; // keep visible if selected
+    const label = card.querySelector("label");
+    if (label) label.style.opacity = "";
+  });
+
   // Wire checkbox clicks (event delegation on grid)
   gridEl.addEventListener("change", (e) => {
     const target = e.target as HTMLInputElement;

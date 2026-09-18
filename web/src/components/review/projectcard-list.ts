@@ -26,7 +26,7 @@ export function renderProjectCards(
         const checkboxVisible = selectedIds.size > 0 ? " !opacity-100" : "";
         return `
       <div data-project-id="${p.id}" class="group relative block rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md${selectedClass}">
-        <label class="absolute top-3 left-3 z-10 cursor-pointer opacity-0 transition-opacity group-hover:opacity-100${checkboxVisible}">
+        <label class="absolute top-3 left-3 z-10 cursor-pointer opacity-0 transition-opacity${checkboxVisible}">
           <input type="checkbox" data-select-project="${p.id}" ${checked}
             class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
         </label>
