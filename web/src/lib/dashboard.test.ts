@@ -15,12 +15,16 @@ const mockCreateProject = vi.fn().mockResolvedValue({
   path: "./01NEW",
   created_at: "2026-01-02T00:00:00Z",
 });
+const mockGetConfig = vi.fn().mockResolvedValue({
+  project_dir: "/home/user/.local/share/openreview/projects",
+});
 
 vi.mock("./engine-client", () => {
   return {
     EngineClient: class {
       listProjects = mockListProjects;
       createProject = mockCreateProject;
+      getConfig = mockGetConfig;
     },
   };
 });

@@ -180,7 +180,7 @@ describe("EngineClient", () => {
       );
 
       const client = new EngineClient({ getEndpoint: () => mockEndpoint });
-      const result = await client.createProject("New Review");
+      const result = await client.createProject({ name: "New Review" });
 
       expect(result).toEqual(mockResponse);
       expect(fetch).toHaveBeenCalledWith(`${mockEndpoint}/api/v1/project`, {
@@ -190,11 +190,41 @@ describe("EngineClient", () => {
       });
     });
 
+    it("sends path and description when provided", async () => {
+      const mockResponse = {
+        project_id: "01XYZ",
+        name: "Custom Project",
+        path: "/custom/path",
+        created_at: "2026-01-01T00:00:00Z",
+      };
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+        new Response(JSON.stringify(mockResponse), { status: 200 })
+      );
+
+      const client = new EngineClient({ getEndpoint: () => mockEndpoint });
+      const result = await client.createProject({
+        name: "Custom Project",
+        path: "/custom/path",
+        description: "A custom project",
+      });
+
+      expect(result).toEqual(mockResponse);
+      expect(fetch).toHaveBeenCalledWith(`${mockEndpoint}/api/v1/project`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Custom Project",
+          path: "/custom/path",
+          description: "A custom project",
+        }),
+      });
+    });
+
     it("throws on network error", async () => {
       vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("Connection refused"));
 
       const client = new EngineClient({ getEndpoint: () => mockEndpoint });
-      await expect(client.createProject("Test")).rejects.toThrow("Connection refused");
+      await expect(client.createProject({ name: "Test" })).rejects.toThrow("Connection refused");
     });
 
     it("throws on non-OK status", async () => {
@@ -203,7 +233,7 @@ describe("EngineClient", () => {
       );
 
       const client = new EngineClient({ getEndpoint: () => mockEndpoint });
-      await expect(client.createProject("Test")).rejects.toThrow("400");
+      await expect(client.createProject({ name: "Test" })).rejects.toThrow("400");
     });
   });
 

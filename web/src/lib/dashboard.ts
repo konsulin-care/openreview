@@ -28,6 +28,8 @@ export async function initDashboard(): Promise<void> {
   const modalCreate = document.getElementById("modal-create");
   const modalError = document.getElementById("modal-error");
   const nameInput = document.getElementById("project-name") as HTMLInputElement | null;
+  const dirInput = document.getElementById("project-directory") as HTMLInputElement | null;
+  const descInput = document.getElementById("project-description") as HTMLTextAreaElement | null;
   const deleteConfirmModal = document.getElementById("delete-confirm-modal");
   const deleteModalBackdrop = document.getElementById("delete-modal-backdrop");
   const deleteConfirmCancel = document.getElementById("delete-confirm-cancel");
@@ -181,8 +183,11 @@ export async function initDashboard(): Promise<void> {
       return;
     }
 
+    const path = dirInput?.value.trim() || undefined;
+    const description = descInput?.value.trim() || undefined;
+
     try {
-      await client.createProject(name);
+      await client.createProject({ name, path, description });
       closeModal();
       await refreshProjects();
     } catch (err) {

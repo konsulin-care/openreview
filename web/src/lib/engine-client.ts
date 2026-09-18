@@ -45,6 +45,16 @@ export interface EngineConfig {
   project_dir: string;
 }
 
+/** Parameters for creating a new project. */
+export interface CreateProjectParams {
+  /** Project name (required). */
+  name: string;
+  /** Custom project directory path (optional, absolute). */
+  path?: string;
+  /** Project description (optional). */
+  description?: string;
+}
+
 // --- Client ---
 
 /**
@@ -112,15 +122,15 @@ export class EngineClient {
 
   /**
    * Create a new project.
-   * @param name — project name
+   * @param params — project creation parameters
    * @returns Created project details
    * @throws On network error or non-OK response
    */
-  async createProject(name: string): Promise<CreateProjectResponse> {
+  async createProject(params: CreateProjectParams): Promise<CreateProjectResponse> {
     const response = await fetch(`${this.endpoint}/api/v1/project`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(params),
     });
 
     if (!response.ok) {
