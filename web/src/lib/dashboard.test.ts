@@ -44,6 +44,8 @@ function createDashboardDom(): void {
     <div id="create-modal" class="hidden">
       <div id="modal-backdrop"></div>
       <input id="project-name" type="text" />
+      <input id="project-directory" type="text" />
+      <textarea id="project-description"></textarea>
       <button id="modal-cancel"></button>
       <button id="modal-create"></button>
       <div id="modal-error" class="hidden"></div>

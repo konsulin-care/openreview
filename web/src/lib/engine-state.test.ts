@@ -274,6 +274,18 @@ describe("VIEWS", () => {
     expect(actionBtnMatch![1]).toContain("hidden");
   });
 
+  it("healthy create modal contains directory input", () => {
+    const html = VIEWS.healthy();
+    expect(html).toContain('id="project-directory"');
+    expect(html).toContain("Project Directory");
+  });
+
+  it("healthy create modal contains description textarea", () => {
+    const html = VIEWS.healthy();
+    expect(html).toContain('id="project-description"');
+    expect(html).toContain("Description");
+  });
+
   it("healthy contains hidden clear-selection-btn", () => {
     const html = VIEWS.healthy();
     expect(html).toContain('id="clear-selection-btn"');

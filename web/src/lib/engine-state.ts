@@ -408,6 +408,15 @@ export const VIEWS: Record<EngineState, () => string> = {
             <label for="project-name" class="block text-sm font-medium text-gray-700">Project Name</label>
             <input type="text" id="project-name" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="e.g., Systematic Review 2026" />
           </div>
+          <div class="mt-4">
+            <label for="project-directory" class="block text-sm font-medium text-gray-700">Project Directory</label>
+            <input type="text" id="project-directory" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="/path/to/project" />
+            <p class="mt-1 text-xs text-gray-500">Directory where project data will be stored. Leave empty for default location.</p>
+          </div>
+          <div class="mt-4">
+            <label for="project-description" class="block text-sm font-medium text-gray-700">Description</label>
+            <textarea id="project-description" rows="3" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Optional description for this project"></textarea>
+          </div>
           <div id="modal-error" class="hidden mt-3 rounded bg-red-50 p-3 text-sm text-red-700"></div>
           <div class="mt-6 flex justify-end gap-3">
             <button id="modal-cancel" type="button" class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
