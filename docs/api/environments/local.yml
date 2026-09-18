@@ -12,3 +12,6 @@ variables:
   - name: projectName
     value: "My Review"
     type: default
+  - name: customProjectDir
+    value: ""
+    type: default

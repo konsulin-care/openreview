@@ -5,24 +5,16 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/konsulin-care/openreview/internal/app"
 	"github.com/konsulin-care/openreview/internal/database"
 )
 
 // ConfigHandler handles GET /api/v1/config, returning engine configuration.
-func ConfigHandler(a *app.App) http.HandlerFunc {
+func ConfigHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": "method not allowed"})
-			return
-		}
-
-		if a.State != app.StateReady {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusServiceUnavailable)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "not initialized"})
 			return
 		}
 

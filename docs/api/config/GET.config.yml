@@ -1,0 +1,27 @@
+info:
+  name: config
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/v1/config"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.project_dir
+      operator: isString
+  scripts:
+    - type: tests
+      code: |-
+        test("config: returns project_dir", function() {
+          expect(res.body.project_dir).to.be.a("string");
+          expect(res.body.project_dir.length).to.be.greaterThan(0);
+        });
+    - type: postrequest
+      code: |-
+        bru.setVar("defaultProjectDir", res.body.project_dir);
+        bru.setNextRequest("get actor");

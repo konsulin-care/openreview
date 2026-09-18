@@ -33,4 +33,4 @@ runtime:
         });
     - type: postrequest
       code: |-
-        bru.setNextRequest("get actor");
+        bru.setNextRequest("config");

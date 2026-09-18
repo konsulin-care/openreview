@@ -6,15 +6,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/konsulin-care/openreview/internal/app"
 	"github.com/konsulin-care/openreview/internal/database"
 )
 
 func TestConfigHandler_Success(t *testing.T) {
-	a := app.NewApp()
-	initializeAndClose(t, a)
-
-	handler := ConfigHandler(a)
+	handler := ConfigHandler()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/config", nil)
 	w := httptest.NewRecorder()
 
@@ -39,16 +35,14 @@ func TestConfigHandler_Success(t *testing.T) {
 	}
 }
 
-func TestConfigHandler_NotInitialized(t *testing.T) {
-	a := app.NewApp()
-
-	handler := ConfigHandler(a)
+func TestConfigHandler_NoInitializationRequired(t *testing.T) {
+	handler := ConfigHandler()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/config", nil)
 	w := httptest.NewRecorder()
 
 	handler.ServeHTTP(w, req)
 
-	if w.Code != http.StatusServiceUnavailable {
-		t.Errorf("status = %d, want %d", w.Code, http.StatusServiceUnavailable)
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 }

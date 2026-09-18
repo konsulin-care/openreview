@@ -11,7 +11,12 @@ http:
       value: application/json
   body:
     type: json
-    data: '{"name": "{{projectName}}"}'
+    data: |
+      {
+        "name": "{{projectName}}",
+        "path": "{{customProjectDir}}",
+        "description": "A systematic review project"
+      }
 
 runtime:
   assertions:
@@ -34,7 +39,7 @@ runtime:
           expect(res.body.project_id.length).to.equal(26);
           expect(res.body.name).to.equal(bru.getEnvVar("projectName"));
         });
-    - type: postrequest
+    - type: after-response
       code: |-
         bru.setVar("project_id", res.body.project_id);
         bru.setNextRequest("get projects");

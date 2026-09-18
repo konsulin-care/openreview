@@ -1,0 +1,4 @@
+name: config
+type: folder
+requests:
+  - GET.config.yml
