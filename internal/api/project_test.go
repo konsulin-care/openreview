@@ -7,9 +7,11 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/konsulin-care/openreview/internal/app"
+	"github.com/konsulin-care/openreview/internal/database"
 )
 
 func TestProjectHandler_POST_Success(t *testing.T) {
@@ -43,6 +45,14 @@ func TestProjectHandler_POST_Success(t *testing.T) {
 	}
 	if resp["path"] == "" {
 		t.Error("path should not be empty")
+	}
+	// Verify path is under the OS data dir, not CWD
+	dataDir, err := database.DataDir()
+	if err != nil {
+		t.Fatalf("DataDir() error: %v", err)
+	}
+	if !strings.HasPrefix(resp["path"], dataDir) {
+		t.Errorf("path = %q, should be under data dir %q", resp["path"], dataDir)
 	}
 	if resp["created_at"] == "" {
 		t.Error("created_at should not be empty")

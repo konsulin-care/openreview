@@ -63,3 +63,28 @@ func MasterDBPath() (string, error) {
 	}
 	return filepath.Join(dir, appName+".sqlite"), nil
 }
+
+// ProjectDir returns the directory for storing project data.
+// Structure: <DataDir>/projects/
+// Creates the directory if it doesn't exist.
+func ProjectDir() (string, error) {
+	dir, err := DataDir()
+	if err != nil {
+		return "", err
+	}
+	projectsDir := filepath.Join(dir, "projects")
+	if err := os.MkdirAll(projectsDir, 0o700); err != nil {
+		return "", fmt.Errorf("create projects directory: %w", err)
+	}
+	return projectsDir, nil
+}
+
+// ProjectPath returns the full path for a project directory.
+// Structure: <ProjectDir>/<projectID>/
+func ProjectPath(projectID string) (string, error) {
+	dir, err := ProjectDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, projectID), nil
+}

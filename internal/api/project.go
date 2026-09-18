@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/konsulin-care/openreview/internal/app"
+	"github.com/konsulin-care/openreview/internal/database"
 	"github.com/konsulin-care/openreview/internal/manifest"
 	"github.com/konsulin-care/openreview/internal/ulid"
 )
@@ -66,7 +67,14 @@ func handleCreateProject(a *app.App, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create project directory structure
-	projectPath := filepath.Join(".", projectID)
+	projectDir, err := database.ProjectDir()
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to resolve data directory"})
+		return
+	}
+	projectPath := filepath.Join(projectDir, projectID)
 	for _, dir := range []string{"events", "papers", "exports"} {
 		if err := os.MkdirAll(filepath.Join(projectPath, dir), 0o755); err != nil {
 			w.Header().Set("Content-Type", "application/json")
