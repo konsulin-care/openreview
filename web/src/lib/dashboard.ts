@@ -7,11 +7,29 @@ import { getConfiguredEndpoint } from "./engine-state";
 import { renderProjectCards, renderEmptyState } from "../components/review/projectcard-list";
 
 /**
+ * Convert a string to a URL-safe slug.
+ * @param name — raw input string
+ * @returns lowercase, hyphen-separated slug with no leading/trailing hyphens
+ */
+function slugify(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+/**
  * Initialize the dashboard: fetch projects, render list, wire modal interactions.
  * Call this after VIEWS["healthy"]() has rendered the HTML shell.
  */
 export async function initDashboard(): Promise<void> {
   const client = new EngineClient({ getEndpoint: getConfiguredEndpoint });
+
+  // --- Fetch default project directory ---
+  let defaultProjectDir = "";
+  try {
+    const config = await client.getConfig();
+    defaultProjectDir = config.project_dir;
+  } catch (err) {
+    console.error("[dashboard] failed to fetch config:", err);
+  }
 
   // --- DOM elements ---
   const grid = document.getElementById("project-grid");
@@ -44,6 +62,7 @@ export async function initDashboard(): Promise<void> {
   const emptyStateEl = emptyState;
   const modalEl = modal;
   const nameInputEl = nameInput;
+  const dirInputEl = dirInput;
   const actionBtnEl = actionBtn;
   const clearSelectionBtnEl = clearSelectionBtn;
   const selectAllBarEl = selectAllBar;
@@ -58,6 +77,13 @@ export async function initDashboard(): Promise<void> {
   function openModal(): void {
     modalEl.classList.remove("hidden");
     nameInputEl.value = "";
+    if (dirInputEl) {
+      dirInputEl.value = defaultProjectDir;
+    }
+    const hint = document.getElementById("default-dir-hint");
+    if (hint && defaultProjectDir) {
+      hint.textContent = `(${defaultProjectDir})`;
+    }
     if (modalError) modalError.classList.add("hidden");
     nameInputEl.focus();
   }
@@ -171,6 +197,17 @@ export async function initDashboard(): Promise<void> {
   // Wire modal close
   modalCancel?.addEventListener("click", closeModal);
   modalBackdrop?.addEventListener("click", closeModal);
+
+  // Wire name input to auto-generate directory path
+  nameInputEl.addEventListener("input", () => {
+    if (!dirInputEl) return;
+    const name = nameInputEl.value.trim();
+    if (name && defaultProjectDir) {
+      dirInputEl.value = `${defaultProjectDir}/${slugify(name)}`;
+    } else if (defaultProjectDir) {
+      dirInputEl.value = defaultProjectDir;
+    }
+  });
 
   // Wire modal create
   modalCreate?.addEventListener("click", async () => {

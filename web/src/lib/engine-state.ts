@@ -410,8 +410,8 @@ export const VIEWS: Record<EngineState, () => string> = {
           </div>
           <div class="mt-4">
             <label for="project-directory" class="block text-sm font-medium text-gray-700">Project Directory</label>
-            <input type="text" id="project-directory" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="/path/to/project" />
-            <p class="mt-1 text-xs text-gray-500">Directory where project data will be stored. Leave empty for default location.</p>
+            <input type="text" id="project-directory" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Fetching default..." />
+            <p class="mt-1 text-xs text-gray-500">Full path where project data will be stored. <span id="default-dir-hint" class="text-gray-400"></span></p>
           </div>
           <div class="mt-4">
             <label for="project-description" class="block text-sm font-medium text-gray-700">Description</label>

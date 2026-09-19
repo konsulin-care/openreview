@@ -271,4 +271,83 @@ describe("initDashboard", () => {
     expect(btn.textContent).toContain("+ New Project");
     expect(btn.classList.contains("bg-blue-600")).toBe(true);
   });
+
+  it("fetches config on init", async () => {
+    await initDashboard();
+
+    expect(mockGetConfig).toHaveBeenCalledTimes(1);
+  });
+
+  it("pre-fills directory input with project_dir on modal open", async () => {
+    await initDashboard();
+
+    const btn = document.getElementById("action-btn")!;
+    const dirInput = document.getElementById("project-directory") as HTMLInputElement;
+
+    btn.click();
+
+    expect(dirInput.value).toBe("/home/user/.local/share/openreview/projects");
+  });
+
+  it("renders default directory hint in helper text", async () => {
+    // Add hint span to test DOM
+    const hintSpan = document.createElement("span");
+    hintSpan.id = "default-dir-hint";
+    document.getElementById("create-modal")!.appendChild(hintSpan);
+
+    await initDashboard();
+
+    const btn = document.getElementById("action-btn")!;
+    btn.click();
+
+    const hint = document.getElementById("default-dir-hint")!;
+    expect(hint.textContent).toBe("(/home/user/.local/share/openreview/projects)");
+  });
+
+  it("auto-generates directory path when project name changes", async () => {
+    await initDashboard();
+
+    const btn = document.getElementById("action-btn")!;
+    const nameInput = document.getElementById("project-name") as HTMLInputElement;
+    const dirInput = document.getElementById("project-directory") as HTMLInputElement;
+
+    btn.click();
+
+    nameInput.value = "Systematic Review 2026";
+    nameInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+    expect(dirInput.value).toBe("/home/user/.local/share/openreview/projects/systematic-review-2026");
+  });
+
+  it("resets directory to default when name is cleared", async () => {
+    await initDashboard();
+
+    const btn = document.getElementById("action-btn")!;
+    const nameInput = document.getElementById("project-name") as HTMLInputElement;
+    const dirInput = document.getElementById("project-directory") as HTMLInputElement;
+
+    btn.click();
+
+    nameInput.value = "My Project";
+    nameInput.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(dirInput.value).toBe("/home/user/.local/share/openreview/projects/my-project");
+
+    nameInput.value = "";
+    nameInput.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(dirInput.value).toBe("/home/user/.local/share/openreview/projects");
+  });
+
+  it("handles config fetch failure gracefully", async () => {
+    mockGetConfig.mockRejectedValueOnce(new Error("network error"));
+
+    await initDashboard();
+
+    const btn = document.getElementById("action-btn")!;
+    const dirInput = document.getElementById("project-directory") as HTMLInputElement;
+
+    btn.click();
+
+    // Directory input should be empty when config fails
+    expect(dirInput.value).toBe("");
+  });
 });
