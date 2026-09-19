@@ -1,0 +1,39 @@
+info:
+  name: update project
+  type: http
+  seq: 11
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/v1/project/{{project_id}}"
+  header:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |
+      {
+        "name": "{{projectName}} Updated",
+        "description": "Updated description"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.project_id
+      operator: isString
+    - expression: res.body.name
+      operator: eq
+      value: "{{projectName}} Updated"
+  scripts:
+    - type: tests
+      code: |-
+        test("update project: returns updated project details", function() {
+          expect(res.body.project_id).to.be.a("string");
+          expect(res.body.name).to.equal(bru.getEnvVar("projectName") + " Updated");
+        });
+    - type: after-response
+      code: |-
+        bru.runner.setNextRequest("get project by id");

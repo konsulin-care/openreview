@@ -15,7 +15,8 @@ http:
       {
         "name": "{{projectName}}",
         "path": "{{customProjectDir}}",
-        "description": "A systematic review project"
+        "description": "A systematic review project",
+        "status": "active"
       }
 
 runtime:
@@ -33,13 +34,13 @@ runtime:
       value: "{{projectName}}"
   scripts:
     - type: tests
-      code: |-
+      code: |- 
         test("project: returns project_id and name", function() {
           expect(res.body.project_id).to.be.a("string");
           expect(res.body.project_id.length).to.equal(26);
           expect(res.body.name).to.equal(bru.getEnvVar("projectName"));
         });
     - type: after-response
-      code: |-
+      code: |- 
         bru.setVar("project_id", res.body.project_id);
         bru.runner.setNextRequest("get projects");
