@@ -258,6 +258,12 @@ func (m *MasterDB) PathExists(path string) (bool, error) {
 	return count > 0, nil
 }
 
+// Exec executes a raw SQL statement (for testing).
+func (m *MasterDB) Exec(query string, args ...interface{}) error {
+	_, err := m.db.Exec(query, args...)
+	return err
+}
+
 // DeleteProject removes a project from the registry by ID.
 // Returns an error if the project does not exist.
 func (m *MasterDB) DeleteProject(id string) error {
