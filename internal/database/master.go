@@ -47,7 +47,29 @@ func Open(path string) (*MasterDB, error) {
 		return nil, fmt.Errorf("execute schema: %w", err)
 	}
 
+	// Run migrations
+	if err := migrate(db); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("migrate database: %w", err)
+	}
+
 	return &MasterDB{db: db}, nil
+}
+
+// migrate applies database migrations for existing databases.
+func migrate(db *sql.DB) error {
+	// Check if status column exists in project table
+	var columnName string
+	err := db.QueryRow("SELECT name FROM pragma_table_info('project') WHERE name = 'status'").Scan(&columnName)
+	if err == sql.ErrNoRows {
+		// Column doesn't exist, add it
+		if _, err := db.Exec("ALTER TABLE project ADD COLUMN status TEXT NOT NULL DEFAULT 'active'"); err != nil {
+			return fmt.Errorf("add status column: %w", err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("check status column: %w", err)
+	}
+	return nil
 }
 
 // Close releases the database resources.

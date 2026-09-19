@@ -44,6 +44,7 @@ func handleCreateProject(a *app.App, w http.ResponseWriter, r *http.Request) {
 		Name        string `json:"name"`
 		Path        string `json:"path"`
 		Description string `json:"description"`
+		Status      string `json:"status"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -52,7 +53,21 @@ func handleCreateProject(a *app.App, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Name == "" {
+	// Default status to "active" if not provided
+	if req.Status == "" {
+		req.Status = "active"
+	}
+
+	// Validate status value
+	if req.Status != "draft" && req.Status != "active" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "status must be 'draft' or 'active'"})
+		return
+	}
+
+	// Name is required for active projects, optional for drafts
+	if req.Status == "active" && req.Name == "" {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "name is required"})
@@ -127,7 +142,7 @@ func handleCreateProject(a *app.App, w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "database not available"})
 		return
 	}
-	if err := a.DB.RegisterProject(projectID, projectPath, req.Name, "active"); err != nil {
+	if err := a.DB.RegisterProject(projectID, projectPath, req.Name, req.Status); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to register project"})
@@ -219,6 +234,8 @@ func handleGetProjectById(a *app.App) http.HandlerFunc {
 		switch r.Method {
 		case http.MethodGet:
 			handleGetProjectByIdGET(a, w, projectID)
+		case http.MethodPut:
+			handleUpdateProject(a, w, r, projectID)
 		case http.MethodDelete:
 			handleDeleteProject(a, w, r, projectID)
 		default:
@@ -263,6 +280,134 @@ func handleGetProjectByIdGET(a *app.App, w http.ResponseWriter, projectID string
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
+}
+
+// handleUpdateProject updates an existing project.
+func handleUpdateProject(a *app.App, w http.ResponseWriter, r *http.Request, projectID string) {
+	// Get existing project
+	p, err := a.DB.GetProject(projectID)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to get project"})
+		return
+	}
+
+	if p == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "project not found"})
+		return
+	}
+
+	var req struct {
+		Name        string `json:"name"`
+		Path        string `json:"path"`
+		Description string `json:"description"`
+		Status      string `json:"status"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid request body"})
+		return
+	}
+
+	// Use existing values if not provided in request
+	newName := req.Name
+	if newName == "" {
+		newName = p.Name
+	}
+	newPath := req.Path
+	if newPath == "" {
+		newPath = p.Path
+	}
+	newStatus := req.Status
+	if newStatus == "" {
+		newStatus = p.Status
+	}
+	newDescription := req.Description
+
+	// Validate path if changing
+	if newPath != p.Path {
+		if !filepath.IsAbs(newPath) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "path must be an absolute path"})
+			return
+		}
+
+		// Check for collision
+		exists, err := a.DB.PathExists(newPath)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to check path"})
+			return
+		}
+		if exists {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusConflict)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "path already in use"})
+			return
+		}
+
+		// Move directory
+		if err := os.Rename(p.Path, newPath); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to move project directory"})
+			return
+		}
+	}
+
+	// Update manifest if name or description changed
+	if newName != p.Name || newDescription != "" {
+		m := manifest.New(projectID, newName)
+		if newDescription != "" {
+			m.SetDescription(newDescription)
+		}
+		if err := m.Validate(); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "manifest validation failed"})
+			return
+		}
+		manifestPath := filepath.Join(newPath, "openreview.yml")
+		if err := m.Write(manifestPath); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to write manifest"})
+			return
+		}
+	}
+
+	// Update DB
+	if err := a.DB.UpdateProject(projectID, newPath, newName); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to update project"})
+		return
+	}
+	if newStatus != p.Status {
+		if err := a.DB.UpdateProjectStatus(projectID, newStatus); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to update project status"})
+			return
+		}
+	}
+
+	// Return updated project
+	updated, _ := a.DB.GetProject(projectID)
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"project_id": updated.ID,
+		"name":       updated.Name,
+		"path":       updated.Path,
+		"status":     updated.Status,
+		"created_at": updated.CreatedAt,
+	})
 }
 
 // handleDeleteProject removes a project from the registry and deletes its directory from disk.
