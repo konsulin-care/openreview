@@ -36,4 +36,4 @@ runtime:
         });
     - type: after-response
       code: |-
-        bru.runner.setNextRequest("get project by id");
+        bru.runner.setNextRequest("delete project");
