@@ -47,12 +47,35 @@ export interface EngineConfig {
 
 /** Parameters for creating a new project. */
 export interface CreateProjectParams {
-  /** Project name (required). */
-  name: string;
+  /** Project name (required for active, optional for draft). */
+  name?: string;
   /** Custom project directory path (optional, absolute). */
   path?: string;
   /** Project description (optional). */
   description?: string;
+  /** Project status: 'draft' or 'active' (default: 'active'). */
+  status?: string;
+}
+
+/** Parameters for updating an existing project. */
+export interface UpdateProjectParams {
+  /** Project name. */
+  name?: string;
+  /** Custom project directory path (optional, absolute). */
+  path?: string;
+  /** Project description. */
+  description?: string;
+  /** Project status: 'draft' or 'active'. */
+  status?: string;
+}
+
+/** Response from PUT /api/v1/project/:id. */
+export interface UpdateProjectResponse {
+  project_id: string;
+  name: string;
+  path: string;
+  status: string;
+  created_at: string;
 }
 
 // --- Client ---
@@ -153,6 +176,27 @@ export class EngineClient {
     }
 
     return response.json() as Promise<EngineConfig>;
+  }
+
+  /**
+   * Update an existing project.
+   * @param id — project ID (ULID)
+   * @param params — update parameters
+   * @returns Updated project details
+   * @throws On network error or non-OK response
+   */
+  async updateProject(id: string, params: UpdateProjectParams): Promise<UpdateProjectResponse> {
+    const response = await fetch(`${this.endpoint}/api/v1/project/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update project: ${response.status}`);
+    }
+
+    return response.json() as Promise<UpdateProjectResponse>;
   }
 
   /**

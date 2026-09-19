@@ -15,6 +15,17 @@ const mockCreateProject = vi.fn().mockResolvedValue({
   path: "./01NEW",
   created_at: "2026-01-02T00:00:00Z",
 });
+const mockUpdateProject = vi.fn().mockResolvedValue({
+  project_id: "01NEW",
+  name: "New Review",
+  path: "./01NEW",
+  status: "active",
+  created_at: "2026-01-02T00:00:00Z",
+});
+const mockDeleteProject = vi.fn().mockResolvedValue({
+  project_id: "01NEW",
+  name: "New Review",
+});
 const mockGetConfig = vi.fn().mockResolvedValue({
   project_dir: "/home/user/.local/share/openreview/projects",
 });
@@ -24,6 +35,8 @@ vi.mock("./engine-client", () => {
     EngineClient: class {
       listProjects = mockListProjects;
       createProject = mockCreateProject;
+      updateProject = mockUpdateProject;
+      deleteProject = mockDeleteProject;
       getConfig = mockGetConfig;
     },
   };
@@ -272,82 +285,85 @@ describe("initDashboard", () => {
     expect(btn.classList.contains("bg-blue-600")).toBe(true);
   });
 
-  it("fetches config on init", async () => {
-    await initDashboard();
-
-    expect(mockGetConfig).toHaveBeenCalledTimes(1);
-  });
-
-  it("pre-fills directory input with project_dir on modal open", async () => {
+  it("creates draft on modal open", async () => {
     await initDashboard();
 
     const btn = document.getElementById("action-btn")!;
     const dirInput = document.getElementById("project-directory") as HTMLInputElement;
 
-    btn.click();
+    await btn.click();
 
-    expect(dirInput.value).toBe("/home/user/.local/share/openreview/projects");
+    // Wait for async draft creation
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    expect(mockCreateProject).toHaveBeenCalledWith({ status: "draft" });
+    expect(dirInput.value).toBe("./01NEW");
   });
 
-  it("renders default directory hint in helper text", async () => {
-    // Add hint span to test DOM
-    const hintSpan = document.createElement("span");
-    hintSpan.id = "default-dir-hint";
-    document.getElementById("create-modal")!.appendChild(hintSpan);
-
+  it("clears directory input on modal open", async () => {
     await initDashboard();
 
     const btn = document.getElementById("action-btn")!;
-    btn.click();
+    const dirInput = document.getElementById("project-directory") as HTMLInputElement;
 
-    const hint = document.getElementById("default-dir-hint")!;
-    expect(hint.textContent).toBe("(/home/user/.local/share/openreview/projects)");
+    await btn.click();
+
+    // Wait for async draft creation
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    // Directory should be filled with draft path, not config path
+    expect(dirInput.value).toBe("./01NEW");
   });
 
-  it("auto-generates directory path when project name changes", async () => {
+  it("finalizes draft on create click", async () => {
     await initDashboard();
 
     const btn = document.getElementById("action-btn")!;
     const nameInput = document.getElementById("project-name") as HTMLInputElement;
-    const dirInput = document.getElementById("project-directory") as HTMLInputElement;
+    const createBtn = document.getElementById("modal-create")!;
 
-    btn.click();
-
-    nameInput.value = "Systematic Review 2026";
-    nameInput.dispatchEvent(new Event("input", { bubbles: true }));
-
-    expect(dirInput.value).toBe("/home/user/.local/share/openreview/projects/systematic-review-2026");
-  });
-
-  it("resets directory to default when name is cleared", async () => {
-    await initDashboard();
-
-    const btn = document.getElementById("action-btn")!;
-    const nameInput = document.getElementById("project-name") as HTMLInputElement;
-    const dirInput = document.getElementById("project-directory") as HTMLInputElement;
-
-    btn.click();
+    await btn.click();
+    await new Promise(resolve => setTimeout(resolve, 10));
 
     nameInput.value = "My Project";
-    nameInput.dispatchEvent(new Event("input", { bubbles: true }));
-    expect(dirInput.value).toBe("/home/user/.local/share/openreview/projects/my-project");
+    await createBtn.click();
+    await new Promise(resolve => setTimeout(resolve, 10));
 
-    nameInput.value = "";
-    nameInput.dispatchEvent(new Event("input", { bubbles: true }));
-    expect(dirInput.value).toBe("/home/user/.local/share/openreview/projects");
+    expect(mockUpdateProject).toHaveBeenCalledWith("01NEW", {
+      name: "My Project",
+      path: "./01NEW",
+      description: undefined,
+      status: "active",
+    });
   });
 
-  it("handles config fetch failure gracefully", async () => {
-    mockGetConfig.mockRejectedValueOnce(new Error("network error"));
+  it("deletes draft on cancel click", async () => {
+    await initDashboard();
+
+    const btn = document.getElementById("action-btn")!;
+    const cancelBtn = document.getElementById("modal-cancel")!;
+
+    await btn.click();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    await cancelBtn.click();
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    expect(mockDeleteProject).toHaveBeenCalledWith("01NEW");
+  });
+
+  it("handles draft creation failure gracefully", async () => {
+    mockCreateProject.mockRejectedValueOnce(new Error("network error"));
 
     await initDashboard();
 
     const btn = document.getElementById("action-btn")!;
-    const dirInput = document.getElementById("project-directory") as HTMLInputElement;
+    const modalError = document.getElementById("modal-error")!;
 
-    btn.click();
+    await btn.click();
+    await new Promise(resolve => setTimeout(resolve, 10));
 
-    // Directory input should be empty when config fails
-    expect(dirInput.value).toBe("");
+    expect(modalError.classList.contains("hidden")).toBe(false);
+    expect(modalError.textContent).toContain("Failed to create draft");
   });
 });

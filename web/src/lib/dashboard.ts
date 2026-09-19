@@ -7,29 +7,11 @@ import { getConfiguredEndpoint } from "./engine-state";
 import { renderProjectCards, renderEmptyState } from "../components/review/projectcard-list";
 
 /**
- * Convert a string to a URL-safe slug.
- * @param name — raw input string
- * @returns lowercase, hyphen-separated slug with no leading/trailing hyphens
- */
-function slugify(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-}
-
-/**
  * Initialize the dashboard: fetch projects, render list, wire modal interactions.
  * Call this after VIEWS["healthy"]() has rendered the HTML shell.
  */
 export async function initDashboard(): Promise<void> {
   const client = new EngineClient({ getEndpoint: getConfiguredEndpoint });
-
-  // --- Fetch default project directory ---
-  let defaultProjectDir = "";
-  try {
-    const config = await client.getConfig();
-    defaultProjectDir = config.project_dir;
-  } catch (err) {
-    console.error("[dashboard] failed to fetch config:", err);
-  }
 
   // --- DOM elements ---
   const grid = document.getElementById("project-grid");
@@ -73,23 +55,55 @@ export async function initDashboard(): Promise<void> {
   let projects: Project[] = [];
   let refreshing = false;
 
-  /** Open the create-project modal. */
-  function openModal(): void {
+  // --- Draft state ---
+  let currentDraftId: string | null = null;
+  let draftCreatedAt: Date | null = null;
+  const DRAFT_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes
+
+  /** Open the create-project modal and create a draft. */
+  async function openModal(): Promise<void> {
     modalEl.classList.remove("hidden");
     nameInputEl.value = "";
     if (dirInputEl) {
-      dirInputEl.value = defaultProjectDir;
+      dirInputEl.value = "";
     }
     const hint = document.getElementById("default-dir-hint");
-    if (hint && defaultProjectDir) {
-      hint.textContent = `(${defaultProjectDir})`;
+    if (hint) {
+      hint.textContent = "";
     }
     if (modalError) modalError.classList.add("hidden");
+
+    // Create a draft project
+    try {
+      const draft = await client.createProject({ status: "draft" });
+      currentDraftId = draft.project_id;
+      draftCreatedAt = new Date();
+      if (dirInputEl) {
+        dirInputEl.value = draft.path;
+      }
+    } catch (err) {
+      console.error("[dashboard] failed to create draft:", err);
+      if (modalError) {
+        modalError.textContent = "Failed to create draft. Please try again.";
+        modalError.classList.remove("hidden");
+      }
+    }
+
     nameInputEl.focus();
   }
 
-  /** Close the create-project modal. */
-  function closeModal(): void {
+  /** Close the create-project modal and clean up draft. */
+  async function closeModal(): Promise<void> {
+    // Delete draft if it exists
+    if (currentDraftId) {
+      try {
+        await client.deleteProject(currentDraftId);
+      } catch (err) {
+        console.error("[dashboard] failed to delete draft:", err);
+      }
+      currentDraftId = null;
+      draftCreatedAt = null;
+    }
     modalEl.classList.add("hidden");
   }
 
@@ -195,19 +209,8 @@ export async function initDashboard(): Promise<void> {
   });
 
   // Wire modal close
-  modalCancel?.addEventListener("click", closeModal);
-  modalBackdrop?.addEventListener("click", closeModal);
-
-  // Wire name input to auto-generate directory path
-  nameInputEl.addEventListener("input", () => {
-    if (!dirInputEl) return;
-    const name = nameInputEl.value.trim();
-    if (name && defaultProjectDir) {
-      dirInputEl.value = `${defaultProjectDir}/${slugify(name)}`;
-    } else if (defaultProjectDir) {
-      dirInputEl.value = defaultProjectDir;
-    }
-  });
+  modalCancel?.addEventListener("click", () => closeModal());
+  modalBackdrop?.addEventListener("click", () => closeModal());
 
   // Wire modal create
   modalCreate?.addEventListener("click", async () => {
@@ -220,12 +223,29 @@ export async function initDashboard(): Promise<void> {
       return;
     }
 
+    // Check if draft has expired
+    if (draftCreatedAt && (Date.now() - draftCreatedAt.getTime()) > DRAFT_MAX_AGE_MS) {
+      if (modalError) {
+        modalError.textContent = "Draft has expired. Please close and try again.";
+        modalError.classList.remove("hidden");
+      }
+      return;
+    }
+
     const path = dirInput?.value.trim() || undefined;
     const description = descInput?.value.trim() || undefined;
 
     try {
-      await client.createProject({ name, path, description });
-      closeModal();
+      // Finalize the draft by updating it
+      await client.updateProject(currentDraftId!, {
+        name,
+        path,
+        description,
+        status: "active",
+      });
+      currentDraftId = null;
+      draftCreatedAt = null;
+      modalEl.classList.add("hidden");
       await refreshProjects();
     } catch (err) {
       console.error("[dashboard] failed to create project:", err);
