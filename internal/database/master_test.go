@@ -3,6 +3,7 @@ package database
 import (
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestOpen_CreatesDatabaseWithTables(t *testing.T) {
@@ -108,7 +109,7 @@ func TestListActors(t *testing.T) {
 func TestRegisterProject_And_Get(t *testing.T) {
 	db := openTestDB(t)
 
-	err := db.RegisterProject("proj-1", "/tmp/my-review", "My Review")
+	err := db.RegisterProject("proj-1", "/tmp/my-review", "My Review", "active")
 	if err != nil {
 		t.Fatalf("RegisterProject() error = %v", err)
 	}
@@ -122,6 +123,32 @@ func TestRegisterProject_And_Get(t *testing.T) {
 	}
 	if p.ID != "proj-1" || p.Path != "/tmp/my-review" || p.Name != "My Review" {
 		t.Errorf("GetProject() = %+v", p)
+	}
+	if p.Status != "active" {
+		t.Errorf("GetProject().Status = %q, want %q", p.Status, "active")
+	}
+}
+
+func TestRegisterProject_DraftStatus(t *testing.T) {
+	db := openTestDB(t)
+
+	err := db.RegisterProject("draft-1", "/tmp/draft", "", "draft")
+	if err != nil {
+		t.Fatalf("RegisterProject() error = %v", err)
+	}
+
+	p, err := db.GetProject("draft-1")
+	if err != nil {
+		t.Fatalf("GetProject() error = %v", err)
+	}
+	if p == nil {
+		t.Fatal("GetProject() returned nil")
+	}
+	if p.Status != "draft" {
+		t.Errorf("GetProject().Status = %q, want %q", p.Status, "draft")
+	}
+	if p.Name != "" {
+		t.Errorf("GetProject().Name = %q, want empty", p.Name)
 	}
 }
 
@@ -140,8 +167,8 @@ func TestGetProject_NotFound(t *testing.T) {
 func TestListProjects(t *testing.T) {
 	db := openTestDB(t)
 
-	_ = db.RegisterProject("p1", "/path/1", "Review 1")
-	_ = db.RegisterProject("p2", "/path/2", "Review 2")
+	_ = db.RegisterProject("p1", "/path/1", "Review 1", "active")
+	_ = db.RegisterProject("p2", "/path/2", "Review 2", "active")
 
 	projects, err := db.ListProjects()
 	if err != nil {
@@ -155,7 +182,7 @@ func TestListProjects(t *testing.T) {
 func TestUpdateProject(t *testing.T) {
 	db := openTestDB(t)
 
-	_ = db.RegisterProject("p1", "/old/path", "Old Name")
+	_ = db.RegisterProject("p1", "/old/path", "Old Name", "active")
 	err := db.UpdateProject("p1", "/new/path", "New Name")
 	if err != nil {
 		t.Fatalf("UpdateProject() error = %v", err)
@@ -164,6 +191,100 @@ func TestUpdateProject(t *testing.T) {
 	p, _ := db.GetProject("p1")
 	if p.Path != "/new/path" || p.Name != "New Name" {
 		t.Errorf("after UpdateProject(), got %+v", p)
+	}
+}
+
+// --- Project Status ---
+
+func TestUpdateProjectStatus(t *testing.T) {
+	db := openTestDB(t)
+
+	_ = db.RegisterProject("p1", "/path/1", "Review", "draft")
+	err := db.UpdateProjectStatus("p1", "active")
+	if err != nil {
+		t.Fatalf("UpdateProjectStatus() error = %v", err)
+	}
+
+	p, _ := db.GetProject("p1")
+	if p.Status != "active" {
+		t.Errorf("after UpdateProjectStatus(), Status = %q, want %q", p.Status, "active")
+	}
+}
+
+func TestCleanupExpiredDrafts(t *testing.T) {
+	db := openTestDB(t)
+
+	// Create drafts with different ages
+	_ = db.RegisterProject("draft-old", "/tmp/old", "Old", "draft")
+	_ = db.RegisterProject("draft-new", "/tmp/new", "New", "draft")
+	_ = db.RegisterProject("active-1", "/tmp/active", "Active", "active")
+
+	// Make draft-old appear old by updating created_at
+	_, _ = db.db.Exec("UPDATE project SET created_at = datetime('now', '-1 hour') WHERE id = 'draft-old'")
+
+	paths, err := db.CleanupExpiredDrafts(10 * time.Minute)
+	if err != nil {
+		t.Fatalf("CleanupExpiredDrafts() error = %v", err)
+	}
+
+	// Should only return the old draft path
+	if len(paths) != 1 || paths[0] != "/tmp/old" {
+		t.Errorf("CleanupExpiredDrafts() = %v, want [/tmp/old]", paths)
+	}
+
+	// Old draft should be deleted
+	p, _ := db.GetProject("draft-old")
+	if p != nil {
+		t.Error("old draft should be deleted")
+	}
+
+	// New draft should remain
+	p, _ = db.GetProject("draft-new")
+	if p == nil {
+		t.Error("new draft should remain")
+	}
+
+	// Active project should remain
+	p, _ = db.GetProject("active-1")
+	if p == nil {
+		t.Error("active project should remain")
+	}
+}
+
+func TestPathExists(t *testing.T) {
+	db := openTestDB(t)
+
+	_ = db.RegisterProject("p1", "/path/to/project", "Review", "active")
+
+	exists, err := db.PathExists("/path/to/project")
+	if err != nil {
+		t.Fatalf("PathExists() error = %v", err)
+	}
+	if !exists {
+		t.Error("PathExists() = false, want true")
+	}
+
+	exists, err = db.PathExists("/other/path")
+	if err != nil {
+		t.Fatalf("PathExists() error = %v", err)
+	}
+	if exists {
+		t.Error("PathExists() = true, want false")
+	}
+}
+
+func TestPathExists_ExcludesProject(t *testing.T) {
+	db := openTestDB(t)
+
+	_ = db.RegisterProject("p1", "/path/to/project", "Review", "active")
+
+	// Same path but different project ID should return false
+	exists, err := db.PathExists("/path/to/project")
+	if err != nil {
+		t.Fatalf("PathExists() error = %v", err)
+	}
+	if !exists {
+		t.Error("PathExists() = false, want true")
 	}
 }
 

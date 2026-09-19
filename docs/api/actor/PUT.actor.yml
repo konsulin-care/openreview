@@ -1,7 +1,7 @@
 info:
   name: put actor
   type: http
-  seq: 6
+  seq: 7
 
 http:
   method: PUT
@@ -35,3 +35,6 @@ runtime:
           expect(res.body.name).to.equal(bru.getEnvVar("actorName"));
           expect(res.body.email).to.equal(bru.getEnvVar("actorEmail"));
         });
+    - type: after-response
+      code: |-
+        bru.runner.setNextRequest("project");

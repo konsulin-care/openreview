@@ -1,2 +1,4 @@
-name: preflight
-type: folder
+info:
+  name: preflight
+  type: folder
+  seq: 3

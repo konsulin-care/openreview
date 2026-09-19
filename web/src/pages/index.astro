@@ -13,6 +13,7 @@ import Breadcrumbs from "../components/layout/Breadcrumbs.astro";
   <script>
     import { resolveEngineState, VIEWS } from "../lib/engine-state";
     import { initWizard } from "../lib/wizard";
+    import { initDashboard } from "../lib/dashboard";
 
     document.addEventListener("DOMContentLoaded", async () => {
       const appRoot = document.getElementById("app-root");
@@ -33,6 +34,11 @@ import Breadcrumbs from "../components/layout/Breadcrumbs.astro";
       // Initialize wizard interaction layer for onboarding views
       if (state === "unconfigured" || state === "not-initialized") {
         initWizard(appRoot);
+      }
+
+      // Initialize dashboard interaction layer
+      if (state === "healthy") {
+        initDashboard();
       }
     });
   </script>

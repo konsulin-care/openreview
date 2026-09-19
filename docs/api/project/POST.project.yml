@@ -1,0 +1,46 @@
+info:
+  name: project
+  type: http
+  seq: 8
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/project"
+  header:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |
+      {
+        "name": "{{projectName}}",
+        "path": "{{customProjectDir}}",
+        "description": "A systematic review project",
+        "status": "active"
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.project_id
+      operator: isString
+    - expression: res.body.project_id.length
+      operator: eq
+      value: "26"
+    - expression: res.body.name
+      operator: eq
+      value: "{{projectName}}"
+  scripts:
+    - type: tests
+      code: |- 
+        test("project: returns project_id and name", function() {
+          expect(res.body.project_id).to.be.a("string");
+          expect(res.body.project_id.length).to.equal(26);
+          expect(res.body.name).to.equal(bru.getEnvVar("projectName"));
+        });
+    - type: after-response
+      code: |- 
+        bru.setVar("project_id", res.body.project_id);
+        bru.runner.setNextRequest("get projects");

@@ -1,2 +1,4 @@
-name: project
-type: folder
+info:
+  name: project
+  type: folder
+  seq: 7

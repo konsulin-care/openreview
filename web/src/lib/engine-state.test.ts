@@ -255,6 +255,51 @@ describe("VIEWS", () => {
     expect(html).toContain("Dashboard");
   });
 
+  it("healthy does not contain selection-bar element", () => {
+    const html = VIEWS.healthy();
+    expect(html).not.toContain('id="selection-bar"');
+  });
+
+  it("healthy contains action-btn with min-w for consistent width", () => {
+    const html = VIEWS.healthy();
+    expect(html).toContain('id="action-btn"');
+    expect(html).toContain("min-w-");
+  });
+
+  it("healthy action-btn has hidden class by default", () => {
+    const html = VIEWS.healthy();
+    // The action-btn should start hidden; initDashboard shows it when projects exist
+    const actionBtnMatch = html.match(/id="action-btn"[^>]*class="([^"]*)"/);
+    expect(actionBtnMatch).not.toBeNull();
+    expect(actionBtnMatch![1]).toContain("hidden");
+  });
+
+  it("healthy create modal contains directory input", () => {
+    const html = VIEWS.healthy();
+    expect(html).toContain('id="project-directory"');
+    expect(html).toContain("Project Directory");
+  });
+
+  it("healthy create modal contains description textarea", () => {
+    const html = VIEWS.healthy();
+    expect(html).toContain('id="project-description"');
+    expect(html).toContain("Description");
+  });
+
+  it("healthy contains hidden clear-selection-btn", () => {
+    const html = VIEWS.healthy();
+    expect(html).toContain('id="clear-selection-btn"');
+    expect(html).toContain('class="hidden');
+  });
+
+  it("healthy contains hidden select-all-bar with checkbox", () => {
+    const html = VIEWS.healthy();
+    expect(html).toContain('id="select-all-bar"');
+    expect(html).toContain('id="select-all-checkbox"');
+    expect(html).toContain('id="select-count"');
+    expect(html).toContain('id="total-count"');
+  });
+
   it("unhealthy returns non-empty string", () => {
     expect(VIEWS.unhealthy().length).toBeGreaterThan(0);
   });

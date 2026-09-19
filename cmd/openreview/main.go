@@ -7,12 +7,16 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
-	"github.com/openreview/openreview/api"
-	"github.com/openreview/openreview/app"
-	"github.com/openreview/openreview/config"
-	"github.com/openreview/openreview/internal/database"
+	"github.com/konsulin-care/openreview/internal/api"
+	"github.com/konsulin-care/openreview/internal/app"
+	"github.com/konsulin-care/openreview/internal/config"
+	"github.com/konsulin-care/openreview/internal/database"
 )
+
+const draftExpiryInterval = 1 * time.Minute
+const draftMaxAge = 10 * time.Minute
 
 func main() {
 	cfg := config.ParseFlags()
@@ -37,6 +41,9 @@ func main() {
 		}
 	}
 
+	// Start draft expiry goroutine
+	go startDraftExpiry(a)
+
 	srv := api.NewServer(a, cfg)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -55,4 +62,29 @@ func main() {
 		log.Printf("shutdown error: %v", err)
 	}
 	os.Exit(0)
+}
+
+// startDraftExpiry runs a background goroutine that cleans up expired drafts.
+func startDraftExpiry(a *app.App) {
+	ticker := time.NewTicker(draftExpiryInterval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		if a.DB == nil {
+			continue
+		}
+		paths, err := a.DB.CleanupExpiredDrafts(draftMaxAge)
+		if err != nil {
+			log.Printf("warning: draft cleanup failed: %v", err)
+			continue
+		}
+		for _, path := range paths {
+			if err := os.RemoveAll(path); err != nil {
+				log.Printf("warning: failed to remove draft directory %s: %v", path, err)
+			}
+		}
+		if len(paths) > 0 {
+			log.Printf("cleaned up %d expired draft(s)", len(paths))
+		}
+	}
 }

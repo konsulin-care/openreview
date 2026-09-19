@@ -25,6 +25,6 @@ runtime:
         test("preflight: mise field is string or null", function() {
           expect(typeof res.body.mise === "string" || res.body.mise === null).to.be.true;
         });
-        test("preflight: chains to initialize", function() {
-          bru.runner.setNextRequest("initialize");
-        });
+    - type: after-response
+      code: |-
+        bru.runner.setNextRequest("initialize");

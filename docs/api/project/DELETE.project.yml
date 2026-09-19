@@ -1,0 +1,31 @@
+info:
+  name: delete project
+  type: http
+  seq: 11
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/v1/project/{{project_id}}"
+  header:
+    - name: Content-Type
+      value: application/json
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.project_id
+      operator: isString
+    - expression: res.body.name
+      operator: isString
+  scripts:
+    - type: tests
+      code: |-
+        test("delete project: returns project_id and name", function() {
+          expect(res.body.project_id).to.be.a("string");
+          expect(res.body.name).to.be.a("string");
+        });
+    - type: after-response
+      code: |- 
+        bru.runner.setNextRequest(null);

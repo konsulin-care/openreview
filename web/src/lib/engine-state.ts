@@ -374,8 +374,69 @@ export const VIEWS: Record<EngineState, () => string> = {
 
   healthy: () =>
     `<section>
-      <h1 class="mb-4 text-3xl font-bold">Dashboard</h1>
-      <p class="text-gray-600">Your review projects will appear here.</p>
+      <div class="flex items-center justify-between">
+        <h1 class="text-3xl font-bold">Dashboard</h1>
+        <div class="flex items-center gap-3">
+          <button id="clear-selection-btn" type="button" class="hidden min-w-[140px] rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Clear</button>
+          <button id="action-btn" type="button" class="hidden min-w-[140px] rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">+ New Project</button>
+        </div>
+      </div>
+
+      <div id="select-all-bar" class="hidden mt-4 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" id="select-all-checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+          <span class="text-sm font-medium text-blue-900">Select All (<span id="select-count">0</span>/<span id="total-count">0</span>)</span>
+        </label>
+      </div>
+
+      <div id="project-grid" class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"></div>
+
+      <div id="empty-state" class="hidden py-12 text-center">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+        </svg>
+        <h2 class="mt-4 text-lg font-semibold text-gray-900">No projects yet</h2>
+        <p class="mt-1 text-sm text-gray-500">Create your first project to start screening papers.</p>
+        <button id="empty-state-cta" type="button" class="mt-4 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Create Project</button>
+      </div>
+
+      <div id="create-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+        <div id="modal-backdrop" class="absolute inset-0 bg-black/50"></div>
+        <div class="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+          <h2 class="text-lg font-semibold text-gray-900">New Project</h2>
+          <div class="mt-4">
+            <label for="project-name" class="block text-sm font-medium text-gray-700">Project Name</label>
+            <input type="text" id="project-name" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="e.g., Systematic Review 2026" />
+          </div>
+          <div class="mt-4">
+            <label for="project-directory" class="block text-sm font-medium text-gray-700">Project Directory</label>
+            <input type="text" id="project-directory" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="/absolute/path/to/project" />
+            <p class="mt-1 text-xs text-gray-500">Full path where project data will be stored. <span id="default-dir-hint" class="text-gray-400"></span></p>
+          </div>
+          <div class="mt-4">
+            <label for="project-description" class="block text-sm font-medium text-gray-700">Description</label>
+            <textarea id="project-description" rows="3" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Optional description for this project"></textarea>
+          </div>
+          <div id="modal-error" class="hidden mt-3 rounded bg-red-50 p-3 text-sm text-red-700"></div>
+          <div class="mt-6 flex justify-end gap-3">
+            <button id="modal-cancel" type="button" class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
+            <button id="modal-create" type="button" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Create</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="delete-confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+        <div id="delete-modal-backdrop" class="absolute inset-0 bg-black/50"></div>
+        <div class="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+          <h2 class="text-lg font-semibold text-gray-900">Delete Projects</h2>
+          <p id="delete-confirm-text" class="mt-2 text-sm text-gray-600"></p>
+          <div id="delete-confirm-error" class="hidden mt-3 rounded bg-red-50 p-3 text-sm text-red-700"></div>
+          <div class="mt-6 flex justify-end gap-3">
+            <button id="delete-confirm-cancel" type="button" class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
+            <button id="delete-confirm-submit" type="button" class="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">Delete</button>
+          </div>
+        </div>
+      </div>
     </section>`, 
 
   unhealthy: () =>

@@ -4,7 +4,7 @@ package app
 import (
 	"log"
 
-	"github.com/openreview/openreview/internal/database"
+	"github.com/konsulin-care/openreview/internal/database"
 )
 
 // State represents the engine's lifecycle state.

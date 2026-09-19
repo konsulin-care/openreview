@@ -1,2 +1,4 @@
-name: status
-type: folder
+info:
+  name: status
+  type: folder
+  seq: 2
