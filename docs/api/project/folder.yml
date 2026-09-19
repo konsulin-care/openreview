@@ -1,7 +1,4 @@
-name: project
-type: folder
-requests:
-  - POST.project.yml
-  - GET.projects.yml
-  - GET.project.id.yml
-  - DELETE.project.yml
+info:
+  name: project
+  type: folder
+  seq: 7

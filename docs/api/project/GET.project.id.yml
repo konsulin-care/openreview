@@ -1,7 +1,7 @@
 info:
   name: get project by id
   type: http
-  seq: 6
+  seq: 10
 
 http:
   method: GET
@@ -29,6 +29,6 @@ runtime:
           expect(res.body.name).to.be.a("string");
           expect(res.body.path).to.be.a("string");
         });
-    - type: postrequest
+    - type: after-response
       code: |-
-        bru.setNextRequest("delete project");
+        bru.runner.setNextRequest("delete project");

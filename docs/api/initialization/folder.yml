@@ -1,2 +1,4 @@
-name: initialization
-type: folder
+info:
+  name: initialization
+  type: folder
+  seq: 4

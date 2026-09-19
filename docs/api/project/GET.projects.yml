@@ -1,7 +1,7 @@
 info:
   name: get projects
   type: http
-  seq: 5
+  seq: 9
 
 http:
   method: GET
@@ -21,6 +21,6 @@ runtime:
         test("projects: returns array", function() {
           expect(Array.isArray(res.body)).to.be.true;
         });
-    - type: postrequest
+    - type: after-response
       code: |-
-        bru.setNextRequest("get project by id");
+        bru.runner.setNextRequest("get project by id");

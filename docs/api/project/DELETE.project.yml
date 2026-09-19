@@ -1,7 +1,7 @@
 info:
   name: delete project
   type: http
-  seq: 7
+  seq: 11
 
 http:
   method: DELETE
@@ -26,6 +26,6 @@ runtime:
           expect(res.body.project_id).to.be.a("string");
           expect(res.body.name).to.be.a("string");
         });
-    - type: postrequest
-      code: |-
-        bru.setNextRequest("get actor");
+    - type: after-response
+      code: |- 
+        bru.runner.setNextRequest(null);

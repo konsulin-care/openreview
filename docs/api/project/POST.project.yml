@@ -1,7 +1,7 @@
 info:
   name: project
   type: http
-  seq: 4
+  seq: 8
 
 http:
   method: POST
@@ -42,4 +42,4 @@ runtime:
     - type: after-response
       code: |-
         bru.setVar("project_id", res.body.project_id);
-        bru.setNextRequest("get projects");
+        bru.runner.setNextRequest("get projects");

@@ -1,2 +1,5 @@
-name: OpenReview API
-type: http
+opencollection: 1.0.0
+
+info:
+  name: OpenReview API
+  type: http

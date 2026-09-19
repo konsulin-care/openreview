@@ -21,6 +21,6 @@ runtime:
         test("health: returns ok", function() {
           expect(res.body.status).to.equal("ok");
         });
-    - type: postrequest
+    - type: after-response
       code: |-
-        bru.setNextRequest("status");
+        bru.runner.setNextRequest("status");

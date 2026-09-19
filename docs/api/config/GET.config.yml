@@ -1,7 +1,7 @@
 info:
   name: config
   type: http
-  seq: 1
+  seq: 5
 
 http:
   method: GET
@@ -21,7 +21,7 @@ runtime:
           expect(res.body.project_dir).to.be.a("string");
           expect(res.body.project_dir.length).to.be.greaterThan(0);
         });
-    - type: postrequest
+    - type: after-response
       code: |-
         bru.setVar("defaultProjectDir", res.body.project_dir);
-        bru.setNextRequest("get actor");
+        bru.runner.setNextRequest("get actor");
