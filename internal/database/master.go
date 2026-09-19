@@ -31,6 +31,7 @@ type Project struct {
 	ID        string
 	Path      string
 	Name      string
+	Status    string
 	CreatedAt string
 }
 
@@ -116,10 +117,10 @@ func (m *MasterDB) LatestActor() (*Actor, error) {
 }
 
 // RegisterProject adds a new project to the registry.
-func (m *MasterDB) RegisterProject(id, path, name string) error {
+func (m *MasterDB) RegisterProject(id, path, name, status string) error {
 	_, err := m.db.Exec(
-		"INSERT INTO project (id, path, name, created_at) VALUES (?, ?, ?, ?)",
-		id, path, name, time.Now().UTC().Format(time.RFC3339),
+		"INSERT INTO project (id, path, name, status, created_at) VALUES (?, ?, ?, ?, ?)",
+		id, path, name, status, time.Now().UTC().Format(time.RFC3339),
 	)
 	if err != nil {
 		return fmt.Errorf("register project: %w", err)
@@ -131,8 +132,8 @@ func (m *MasterDB) RegisterProject(id, path, name string) error {
 func (m *MasterDB) GetProject(id string) (*Project, error) {
 	var p Project
 	err := m.db.QueryRow(
-		"SELECT id, path, name, created_at FROM project WHERE id = ?", id,
-	).Scan(&p.ID, &p.Path, &p.Name, &p.CreatedAt)
+		"SELECT id, path, name, status, created_at FROM project WHERE id = ?", id,
+	).Scan(&p.ID, &p.Path, &p.Name, &p.Status, &p.CreatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -144,7 +145,7 @@ func (m *MasterDB) GetProject(id string) (*Project, error) {
 
 // ListProjects returns all registered projects.
 func (m *MasterDB) ListProjects() ([]Project, error) {
-	rows, err := m.db.Query("SELECT id, path, name, created_at FROM project")
+	rows, err := m.db.Query("SELECT id, path, name, status, created_at FROM project")
 	if err != nil {
 		return nil, fmt.Errorf("list projects: %w", err)
 	}
@@ -153,7 +154,7 @@ func (m *MasterDB) ListProjects() ([]Project, error) {
 	var projects []Project
 	for rows.Next() {
 		var p Project
-		if err := rows.Scan(&p.ID, &p.Path, &p.Name, &p.CreatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.Path, &p.Name, &p.Status, &p.CreatedAt); err != nil {
 			return nil, fmt.Errorf("list projects scan: %w", err)
 		}
 		projects = append(projects, p)
@@ -171,6 +172,68 @@ func (m *MasterDB) UpdateProject(id, path, name string) error {
 		return fmt.Errorf("update project: %w", err)
 	}
 	return nil
+}
+
+// UpdateProjectStatus updates the status of an existing project.
+func (m *MasterDB) UpdateProjectStatus(id, status string) error {
+	_, err := m.db.Exec(
+		"UPDATE project SET status = ? WHERE id = ?",
+		status, id,
+	)
+	if err != nil {
+		return fmt.Errorf("update project status: %w", err)
+	}
+	return nil
+}
+
+// CleanupExpiredDrafts deletes drafts older than maxAge and returns their paths.
+func (m *MasterDB) CleanupExpiredDrafts(maxAge time.Duration) ([]string, error) {
+	// First, get paths of expired drafts
+	rows, err := m.db.Query(
+		"SELECT path FROM project WHERE status = 'draft' AND created_at < datetime('now', ?)",
+		"-"+fmt.Sprintf("%d seconds", int(maxAge.Seconds())),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query expired drafts: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var paths []string
+	for rows.Next() {
+		var path string
+		if err := rows.Scan(&path); err != nil {
+			return nil, fmt.Errorf("scan expired draft: %w", err)
+		}
+		paths = append(paths, path)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	// Delete expired drafts
+	if len(paths) > 0 {
+		_, err = m.db.Exec(
+			"DELETE FROM project WHERE status = 'draft' AND created_at < datetime('now', ?)",
+			"-"+fmt.Sprintf("%d seconds", int(maxAge.Seconds())),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("delete expired drafts: %w", err)
+		}
+	}
+
+	return paths, nil
+}
+
+// PathExists checks if a path is used by any project.
+func (m *MasterDB) PathExists(path string) (bool, error) {
+	var count int
+	err := m.db.QueryRow(
+		"SELECT COUNT(*) FROM project WHERE path = ?", path,
+	).Scan(&count)
+	if err != nil {
+		return false, fmt.Errorf("check path exists: %w", err)
+	}
+	return count > 0, nil
 }
 
 // DeleteProject removes a project from the registry by ID.

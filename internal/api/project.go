@@ -127,7 +127,7 @@ func handleCreateProject(a *app.App, w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "database not available"})
 		return
 	}
-	if err := a.DB.RegisterProject(projectID, projectPath, req.Name); err != nil {
+	if err := a.DB.RegisterProject(projectID, projectPath, req.Name, "active"); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to register project"})
