@@ -4,6 +4,9 @@ import {
   SIDEBAR_WIDTH_EXPANDED,
   SIDEBAR_WIDTH_COLLAPSED,
   MAIN_CLASSES,
+  MOBILE_BREAKPOINT,
+  SWIPE_THRESHOLD,
+  SIDEBAR_Z_INDEX,
 } from "./layout-utils";
 
 describe("Layout class constants", () => {
@@ -23,5 +26,17 @@ describe("Layout class constants", () => {
   it("MAIN_CLASSES has flex-1 and transition", () => {
     expect(MAIN_CLASSES).toContain("flex-1");
     expect(MAIN_CLASSES).toContain("transition-all");
+  });
+
+  it("MOBILE_BREAKPOINT is 768", () => {
+    expect(MOBILE_BREAKPOINT).toBe(768);
+  });
+
+  it("SWIPE_THRESHOLD is 50", () => {
+    expect(SWIPE_THRESHOLD).toBe(50);
+  });
+
+  it("SIDEBAR_Z_INDEX is 50", () => {
+    expect(SIDEBAR_Z_INDEX).toBe(50);
   });
 });

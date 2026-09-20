@@ -27,7 +27,7 @@ function isActive(href: string): boolean {
 
 <aside
   data-collapsed="false"
-  class="sidebar sticky top-0 flex h-screen w-60 flex-col border-r border-gray-200 bg-white transition-all duration-200"
+  class="sidebar sticky top-0 flex h-screen flex-col border-r border-gray-200 bg-white transition-all duration-200"
 >
   {/* Top bar: logo + toggle */}
   <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3">
@@ -86,7 +86,14 @@ function isActive(href: string): boolean {
   </div>
 </aside>
 
+<div class="sidebar-backdrop fixed inset-0 z-40 bg-black/30"></div>
+
 <style>
+  /* Desktop: width controlled by collapsed state */
+  .sidebar {
+    width: 15rem;
+  }
+
   /* Collapsed state: hide labels, narrow width */
   .sidebar[data-collapsed="true"] {
     width: 4rem;
@@ -102,13 +109,49 @@ function isActive(href: string): boolean {
   :global(body:not(.sidebar-collapsed)) {
     --sidebar-margin: 15rem;
   }
+
+  /* Backdrop hidden by default */
+  .sidebar-backdrop {
+    display: none;
+  }
+
+  /* Mobile: sidebar always fixed, main always offset by collapsed width */
+  @media (max-width: 767px) {
+    .sidebar {
+      touch-action: pan-y;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 4rem;
+    }
+
+    /* Expanded: widen overlay */
+    .sidebar[data-collapsed="false"] {
+      width: 15rem;
+      z-index: 50;
+    }
+
+    /* Backdrop shown only when expanded on mobile */
+    .sidebar[data-collapsed="false"] ~ .sidebar-backdrop {
+      display: block;
+    }
+
+    :global(main) {
+      margin-left: 4rem;
+      overflow-x: hidden;
+    }
+  }
 </style>
 
 <script>
   const STORAGE_KEY = "openreview:sidebarCollapsed";
+  const MOBILE_BREAKPOINT = 768;
+  const SWIPE_THRESHOLD = 50;
+
   const sidebar = document.querySelector(".sidebar") as HTMLElement | null;
   const toggle = document.querySelector("[data-sidebar-toggle]") as HTMLButtonElement | null;
   const toggleIcon = document.querySelector(".toggle-icon") as SVGElement | null;
+  const backdrop = document.querySelector(".sidebar-backdrop") as HTMLElement | null;
 
   function setCollapsed(collapsed: boolean) {
     if (!sidebar) return;
@@ -124,16 +167,68 @@ function isActive(href: string): boolean {
     }
   }
 
-  // Initialize from localStorage
+  function isMobile(): boolean {
+    return window.innerWidth < MOBILE_BREAKPOINT;
+  }
+
+  // Initialize: always collapsed on mobile, respect localStorage on desktop
   const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === "true") {
+  if (isMobile()) {
+    setCollapsed(true);
+  } else if (stored === "true") {
     setCollapsed(true);
   }
 
+  // Toggle button
   toggle?.addEventListener("click", () => {
     const collapsed = sidebar?.dataset.collapsed === "true";
     const next = !collapsed;
     localStorage.setItem(STORAGE_KEY, String(next));
     setCollapsed(next);
+  });
+
+  // Backdrop click collapses sidebar (mobile)
+  backdrop?.addEventListener("click", () => {
+    localStorage.setItem(STORAGE_KEY, "true");
+    setCollapsed(true);
+  });
+
+  // Swipe gesture handling
+  let touchStartX = 0;
+
+  function handleSwipeStart(x: number) {
+    touchStartX = x;
+  }
+
+  function handleSwipeEnd(x: number) {
+    if (!isMobile()) return;
+    const deltaX = x - touchStartX;
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD) return;
+
+    if (deltaX < 0) {
+      // Swipe left → collapse
+      localStorage.setItem(STORAGE_KEY, "true");
+      setCollapsed(true);
+    } else {
+      // Swipe right → expand
+      localStorage.setItem(STORAGE_KEY, "false");
+      setCollapsed(false);
+    }
+  }
+
+  // Swipe on sidebar
+  sidebar?.addEventListener("touchstart", (e) => {
+    handleSwipeStart(e.touches[0].clientX);
+  });
+  sidebar?.addEventListener("touchend", (e) => {
+    handleSwipeEnd(e.changedTouches[0].clientX);
+  });
+
+  // Swipe on main content area (body)
+  document.body.addEventListener("touchstart", (e) => {
+    handleSwipeStart(e.touches[0].clientX);
+  });
+  document.body.addEventListener("touchend", (e) => {
+    handleSwipeEnd(e.changedTouches[0].clientX);
   });
 </script>
