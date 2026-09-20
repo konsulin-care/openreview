@@ -5,7 +5,19 @@ import type { Project } from "./engine-client";
 
 // Mock engine-client
 const mockProjects: Project[] = [
-  { id: "01ABC", path: "./01ABC", name: "Review A", created_at: "2026-01-01T00:00:00Z" },
+  {
+    id: "01ABC",
+    path: "./01ABC",
+    name: "Review A",
+    description: "",
+    created_at: "2026-01-01T00:00:00Z",
+    paper_count: 0,
+    accepted_count: 0,
+    rejected_count: 0,
+    no_decision_count: 0,
+    conflict_count: 0,
+    screening_status: "not-started",
+  },
 ];
 
 const mockListProjects = vi.fn().mockResolvedValue(mockProjects);

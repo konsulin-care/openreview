@@ -125,8 +125,32 @@ describe("EngineClient", () => {
   describe("listProjects", () => {
     it("returns parsed Project array on 200 OK", async () => {
       const mockProjects: Project[] = [
-        { id: "01ABC", path: "./01ABC", name: "Review A", created_at: "2026-01-01T00:00:00Z" },
-        { id: "01DEF", path: "./01DEF", name: "Review B", created_at: "2026-01-02T00:00:00Z" },
+        {
+          id: "01ABC",
+          path: "./01ABC",
+          name: "Review A",
+          description: "",
+          created_at: "2026-01-01T00:00:00Z",
+          paper_count: 0,
+          accepted_count: 0,
+          rejected_count: 0,
+          no_decision_count: 0,
+          conflict_count: 0,
+          screening_status: "not-started",
+        },
+        {
+          id: "01DEF",
+          path: "./01DEF",
+          name: "Review B",
+          description: "",
+          created_at: "2026-01-02T00:00:00Z",
+          paper_count: 0,
+          accepted_count: 0,
+          rejected_count: 0,
+          no_decision_count: 0,
+          conflict_count: 0,
+          screening_status: "not-started",
+        },
       ];
       vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
         new Response(JSON.stringify(mockProjects), { status: 200 })

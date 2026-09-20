@@ -28,11 +28,12 @@ type Actor struct {
 
 // Project represents a registered review project.
 type Project struct {
-	ID        string
-	Path      string
-	Name      string
-	Status    string
-	CreatedAt string
+	ID          string
+	Path        string
+	Name        string
+	Description string
+	Status      string
+	CreatedAt   string
 }
 
 // Open opens or creates a SQLite database at path and initializes the schema.
@@ -69,6 +70,18 @@ func migrate(db *sql.DB) error {
 	} else if err != nil {
 		return fmt.Errorf("check status column: %w", err)
 	}
+
+	// Check if description column exists in project table
+	err = db.QueryRow("SELECT name FROM pragma_table_info('project') WHERE name = 'description'").Scan(&columnName)
+	if err == sql.ErrNoRows {
+		// Column doesn't exist, add it
+		if _, err := db.Exec("ALTER TABLE project ADD COLUMN description TEXT NOT NULL DEFAULT ''"); err != nil {
+			return fmt.Errorf("add description column: %w", err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("check description column: %w", err)
+	}
+
 	return nil
 }
 
@@ -139,10 +152,10 @@ func (m *MasterDB) LatestActor() (*Actor, error) {
 }
 
 // RegisterProject adds a new project to the registry.
-func (m *MasterDB) RegisterProject(id, path, name, status string) error {
+func (m *MasterDB) RegisterProject(id, path, name, status, description string) error {
 	_, err := m.db.Exec(
-		"INSERT INTO project (id, path, name, status, created_at) VALUES (?, ?, ?, ?, ?)",
-		id, path, name, status, time.Now().UTC().Format(time.RFC3339),
+		"INSERT INTO project (id, path, name, description, status, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+		id, path, name, description, status, time.Now().UTC().Format(time.RFC3339),
 	)
 	if err != nil {
 		return fmt.Errorf("register project: %w", err)
@@ -154,8 +167,8 @@ func (m *MasterDB) RegisterProject(id, path, name, status string) error {
 func (m *MasterDB) GetProject(id string) (*Project, error) {
 	var p Project
 	err := m.db.QueryRow(
-		"SELECT id, path, name, status, created_at FROM project WHERE id = ?", id,
-	).Scan(&p.ID, &p.Path, &p.Name, &p.Status, &p.CreatedAt)
+		"SELECT id, path, name, description, status, created_at FROM project WHERE id = ?", id,
+	).Scan(&p.ID, &p.Path, &p.Name, &p.Description, &p.Status, &p.CreatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -167,7 +180,7 @@ func (m *MasterDB) GetProject(id string) (*Project, error) {
 
 // ListProjects returns all registered projects.
 func (m *MasterDB) ListProjects() ([]Project, error) {
-	rows, err := m.db.Query("SELECT id, path, name, status, created_at FROM project")
+	rows, err := m.db.Query("SELECT id, path, name, description, status, created_at FROM project")
 	if err != nil {
 		return nil, fmt.Errorf("list projects: %w", err)
 	}
@@ -176,7 +189,7 @@ func (m *MasterDB) ListProjects() ([]Project, error) {
 	var projects []Project
 	for rows.Next() {
 		var p Project
-		if err := rows.Scan(&p.ID, &p.Path, &p.Name, &p.Status, &p.CreatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.Path, &p.Name, &p.Description, &p.Status, &p.CreatedAt); err != nil {
 			return nil, fmt.Errorf("list projects scan: %w", err)
 		}
 		projects = append(projects, p)

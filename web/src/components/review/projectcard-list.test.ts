@@ -1,10 +1,52 @@
 import { describe, it, expect } from "vitest";
-import { renderProjectCards, renderEmptyState } from "./projectcard-list";
+import { renderProjectCards, renderEmptyState, truncatePath, formatDateTime } from "./projectcard-list";
 import type { Project } from "../../lib/engine-client";
 
+/** Helper to create a Project with default values for all required fields. */
+function makeProject(overrides: Partial<Project>): Project {
+  return {
+    id: "",
+    path: "",
+    name: "",
+    description: "",
+    created_at: "2026-01-01T00:00:00Z",
+    paper_count: 0,
+    accepted_count: 0,
+    rejected_count: 0,
+    no_decision_count: 0,
+    conflict_count: 0,
+    screening_status: "not-started",
+    ...overrides,
+  };
+}
+
 const mockProjects: Project[] = [
-  { id: "01ABC", path: "/tmp/01ABC", name: "Review A", created_at: "2026-01-01" },
-  { id: "01DEF", path: "/tmp/01DEF", name: "Review B", created_at: "2026-01-02" },
+  {
+    id: "01ABC",
+    path: "/tmp/01ABC",
+    name: "Review A",
+    description: "A comprehensive review of XYZ",
+    created_at: "2026-01-01T00:00:00Z",
+    paper_count: 100,
+    accepted_count: 50,
+    rejected_count: 30,
+    no_decision_count: 15,
+    conflict_count: 5,
+    screening_status: "in-progress",
+  },
+  {
+    id: "01DEF",
+    path: "/tmp/01DEF",
+    name: "Review B",
+    description: "",
+    created_at: "2026-01-02T00:00:00Z",
+    paper_count: 0,
+    accepted_count: 0,
+    rejected_count: 0,
+    no_decision_count: 0,
+    conflict_count: 0,
+    screening_status: "not-started",
+  },
 ];
 
 describe("renderProjectCards", () => {
@@ -78,7 +120,7 @@ describe("renderProjectCards", () => {
 
   it("renders a single project card with link", () => {
     const projects: Project[] = [
-      { id: "01ABC", path: "./01ABC", name: "Review A", created_at: "2026-01-01T00:00:00Z" },
+      makeProject({ id: "01ABC", path: "./01ABC", name: "Review A" }),
     ];
     const html = renderProjectCards(projects);
 
@@ -89,8 +131,8 @@ describe("renderProjectCards", () => {
 
   it("renders multiple project cards", () => {
     const projects: Project[] = [
-      { id: "01ABC", path: "./01ABC", name: "Review A", created_at: "2026-01-01T00:00:00Z" },
-      { id: "01DEF", path: "./01DEF", name: "Review B", created_at: "2026-01-02T00:00:00Z" },
+      makeProject({ id: "01ABC", path: "./01ABC", name: "Review A" }),
+      makeProject({ id: "01DEF", path: "./01DEF", name: "Review B" }),
     ];
     const html = renderProjectCards(projects);
 
@@ -102,7 +144,19 @@ describe("renderProjectCards", () => {
 
   it("wraps each card in a link to /project?id=", () => {
     const projects: Project[] = [
-      { id: "01XYZ", path: "./01XYZ", name: "Test", created_at: "2026-01-01T00:00:00Z" },
+      {
+        id: "01XYZ",
+        path: "./01XYZ",
+        name: "Test",
+        description: "",
+        created_at: "2026-01-01T00:00:00Z",
+        paper_count: 0,
+        accepted_count: 0,
+        rejected_count: 0,
+        no_decision_count: 0,
+        conflict_count: 0,
+        screening_status: "not-started",
+      },
     ];
     const html = renderProjectCards(projects);
 
@@ -112,11 +166,24 @@ describe("renderProjectCards", () => {
 
   it("includes project created_at date", () => {
     const projects: Project[] = [
-      { id: "01ABC", path: "./01ABC", name: "Review A", created_at: "2026-01-01T00:00:00Z" },
+      {
+        id: "01ABC",
+        path: "./01ABC",
+        name: "Review A",
+        description: "",
+        created_at: "2026-01-01T00:00:00Z",
+        paper_count: 0,
+        accepted_count: 0,
+        rejected_count: 0,
+        no_decision_count: 0,
+        conflict_count: 0,
+        screening_status: "not-started",
+      },
     ];
     const html = renderProjectCards(projects);
 
-    expect(html).toContain("2026-01-01");
+    // Date is formatted via toLocaleString(), so just check it's rendered
+    expect(html).toMatch(/\d{1,2}\/\d{1,2}\/\d{2,4}/);
   });
 
   it("positions checkbox vertically centered on left edge", () => {
@@ -128,6 +195,83 @@ describe("renderProjectCards", () => {
   it("adds padding-left to card link to avoid overlap with checkbox", () => {
     const html = renderProjectCards(mockProjects);
     expect(html).toContain('class="block pl-8"');
+  });
+
+  it("renders description", () => {
+    const html = renderProjectCards(mockProjects);
+    expect(html).toContain("A comprehensive review of XYZ");
+  });
+
+  it("renders truncated path with full path in title attribute", () => {
+    const projects: Project[] = [
+      {
+        id: "01ABC",
+        path: "/home/lam/data/professional/jobs/konsulin/reviews/dm2-depression-prevalence",
+        name: "Review A",
+        description: "",
+        created_at: "2026-01-01T00:00:00Z",
+        paper_count: 0,
+        accepted_count: 0,
+        rejected_count: 0,
+        no_decision_count: 0,
+        conflict_count: 0,
+        screening_status: "not-started",
+      },
+    ];
+    const html = renderProjectCards(projects);
+
+    expect(html).toContain(".../reviews/dm2-depression-prevalence");
+    expect(html).toContain('title="/home/lam/data/professional/jobs/konsulin/reviews/dm2-depression-prevalence"');
+  });
+
+  it("renders paper count stats", () => {
+    const html = renderProjectCards(mockProjects);
+    expect(html).toContain("100");
+    expect(html).toContain("50");
+    expect(html).toContain("30");
+  });
+
+  it("renders screening status badge", () => {
+    const html = renderProjectCards(mockProjects);
+    expect(html).toContain("In progress");
+  });
+});
+
+describe("truncatePath", () => {
+  it("truncates long path to last 2 segments", () => {
+    expect(truncatePath("/home/lam/data/professional/jobs/konsulin/reviews/dm2-depression-prevalence")).toBe(".../reviews/dm2-depression-prevalence");
+  });
+
+  it("returns full path when 2 or fewer segments", () => {
+    expect(truncatePath("/reviews/dm2")).toBe("/reviews/dm2");
+  });
+
+  it("handles single segment path", () => {
+    expect(truncatePath("/reviews")).toBe("/reviews");
+  });
+
+  it("handles path without leading slash", () => {
+    expect(truncatePath("reviews/dm2")).toBe("reviews/dm2");
+  });
+
+  it("handles empty path", () => {
+    expect(truncatePath("")).toBe("");
+  });
+
+  it("handles path with trailing slash", () => {
+    expect(truncatePath("/reviews/dm2/")).toBe("/reviews/dm2");
+  });
+});
+
+describe("formatDateTime", () => {
+  it("returns a non-empty string", () => {
+    const result = formatDateTime("2026-01-01T00:00:00Z");
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it("returns a string (format varies by locale/timezone)", () => {
+    const result = formatDateTime("2026-01-15T15:45:00Z");
+    expect(typeof result).toBe("string");
   });
 });
 

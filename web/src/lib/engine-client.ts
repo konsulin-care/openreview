@@ -29,7 +29,14 @@ export interface Project {
   id: string;
   path: string;
   name: string;
+  description: string;
   created_at: string;
+  paper_count: number;
+  accepted_count: number;
+  rejected_count: number;
+  no_decision_count: number;
+  conflict_count: number;
+  screening_status: "not-started" | "in-progress" | "complete";
 }
 
 /** Response from POST /api/v1/project. */

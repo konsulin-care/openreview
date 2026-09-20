@@ -251,7 +251,7 @@ func TestProjectHandler_GET_Success(t *testing.T) {
 		t.Errorf("status = %d, want %d", w.Code, http.StatusOK)
 	}
 
-	var resp []map[string]string
+	var resp []map[string]interface{}
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("unmarshal error: %v", err)
 	}
@@ -298,6 +298,126 @@ func TestProjectHandler_GET_NotInitialized(t *testing.T) {
 
 	if w.Code != http.StatusServiceUnavailable {
 		t.Errorf("status = %d, want %d", w.Code, http.StatusServiceUnavailable)
+	}
+}
+
+// --- Paper count stats ---
+
+func TestProjectHandler_GET_IncludesPaperCounts(t *testing.T) {
+	a := app.NewApp()
+	initializeAndClose(t, a)
+
+	// Create a project
+	handler := ProjectHandler(a)
+	createBody := `{"name":"Paper Count Test"}`
+	createReq := httptest.NewRequest(http.MethodPost, "/api/v1/project", bytes.NewBufferString(createBody))
+	createReq.Header.Set("Content-Type", "application/json")
+	createW := httptest.NewRecorder()
+	handler.ServeHTTP(createW, createReq)
+
+	if createW.Code != http.StatusOK {
+		t.Fatalf("create project failed: status %d", createW.Code)
+	}
+
+	// GET projects
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/project", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	var resp []map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	if len(resp) == 0 {
+		t.Fatal("should have at least one project")
+	}
+
+	project := resp[0]
+
+	// Verify paper count fields exist
+	if _, ok := project["paper_count"]; !ok {
+		t.Error("paper_count field missing")
+	}
+	if _, ok := project["accepted_count"]; !ok {
+		t.Error("accepted_count field missing")
+	}
+	if _, ok := project["rejected_count"]; !ok {
+		t.Error("rejected_count field missing")
+	}
+	if _, ok := project["no_decision_count"]; !ok {
+		t.Error("no_decision_count field missing")
+	}
+	if _, ok := project["conflict_count"]; !ok {
+		t.Error("conflict_count field missing")
+	}
+
+	// Verify counts are zeros (no papers yet)
+	if project["paper_count"] != float64(0) {
+		t.Errorf("paper_count = %v, want 0", project["paper_count"])
+	}
+	if project["accepted_count"] != float64(0) {
+		t.Errorf("accepted_count = %v, want 0", project["accepted_count"])
+	}
+	if project["rejected_count"] != float64(0) {
+		t.Errorf("rejected_count = %v, want 0", project["rejected_count"])
+	}
+	if project["no_decision_count"] != float64(0) {
+		t.Errorf("no_decision_count = %v, want 0", project["no_decision_count"])
+	}
+	if project["conflict_count"] != float64(0) {
+		t.Errorf("conflict_count = %v, want 0", project["conflict_count"])
+	}
+}
+
+// --- Screening status ---
+
+func TestProjectHandler_GET_IncludesScreeningStatus(t *testing.T) {
+	a := app.NewApp()
+	initializeAndClose(t, a)
+
+	// Create a project
+	handler := ProjectHandler(a)
+	createBody := `{"name":"Screening Status Test"}`
+	createReq := httptest.NewRequest(http.MethodPost, "/api/v1/project", bytes.NewBufferString(createBody))
+	createReq.Header.Set("Content-Type", "application/json")
+	createW := httptest.NewRecorder()
+	handler.ServeHTTP(createW, createReq)
+
+	if createW.Code != http.StatusOK {
+		t.Fatalf("create project failed: status %d", createW.Code)
+	}
+
+	// GET projects
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/project", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	var resp []map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	if len(resp) == 0 {
+		t.Fatal("should have at least one project")
+	}
+
+	project := resp[0]
+
+	// Verify screening_status field exists
+	if _, ok := project["screening_status"]; !ok {
+		t.Error("screening_status field missing")
+	}
+
+	// With no papers, screening status should be "not-started"
+	if project["screening_status"] != "not-started" {
+		t.Errorf("screening_status = %v, want not-started", project["screening_status"])
 	}
 }
 

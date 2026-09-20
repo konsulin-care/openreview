@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS project (
     id TEXT PRIMARY KEY,
     path TEXT NOT NULL,
     name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL DEFAULT 'active',
     created_at TEXT NOT NULL
 );

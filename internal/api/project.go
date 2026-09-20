@@ -142,7 +142,7 @@ func handleCreateProject(a *app.App, w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "database not available"})
 		return
 	}
-	if err := a.DB.RegisterProject(projectID, projectPath, req.Name, req.Status); err != nil {
+	if err := a.DB.RegisterProject(projectID, projectPath, req.Name, req.Status, req.Description); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to register project"})
@@ -185,19 +185,38 @@ func handleGetProjects(a *app.App, w http.ResponseWriter, r *http.Request) {
 
 	// Convert to JSON-serializable format
 	type projectResponse struct {
-		ID        string `json:"id"`
-		Path      string `json:"path"`
-		Name      string `json:"name"`
-		CreatedAt string `json:"created_at"`
+		ID              string `json:"id"`
+		Path            string `json:"path"`
+		Name            string `json:"name"`
+		Description     string `json:"description"`
+		CreatedAt       string `json:"created_at"`
+		PaperCount      int    `json:"paper_count"`
+		AcceptedCount   int    `json:"accepted_count"`
+		RejectedCount   int    `json:"rejected_count"`
+		NoDecisionCount int    `json:"no_decision_count"`
+		ConflictCount   int    `json:"conflict_count"`
+		ScreeningStatus string `json:"screening_status"`
 	}
 
 	resp := make([]projectResponse, 0)
 	for _, p := range projects {
+		// Derive screening status from paper counts
+		paperCount := 0
+		screeningStatus := "not-started"
+		// TODO: Query paper counts from paper table when implemented
+
 		resp = append(resp, projectResponse{
-			ID:        p.ID,
-			Path:      p.Path,
-			Name:      p.Name,
-			CreatedAt: p.CreatedAt,
+			ID:              p.ID,
+			Path:            p.Path,
+			Name:            p.Name,
+			Description:     p.Description,
+			CreatedAt:       p.CreatedAt,
+			PaperCount:      paperCount,
+			AcceptedCount:   0,
+			RejectedCount:   0,
+			NoDecisionCount: 0,
+			ConflictCount:   0,
+			ScreeningStatus: screeningStatus,
 		})
 	}
 
@@ -265,17 +284,19 @@ func handleGetProjectByIdGET(a *app.App, w http.ResponseWriter, projectID string
 
 	// Convert to JSON-serializable format
 	type projectResponse struct {
-		ID        string `json:"id"`
-		Path      string `json:"path"`
-		Name      string `json:"name"`
-		CreatedAt string `json:"created_at"`
+		ID          string `json:"id"`
+		Path        string `json:"path"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		CreatedAt   string `json:"created_at"`
 	}
 
 	resp := projectResponse{
-		ID:        p.ID,
-		Path:      p.Path,
-		Name:      p.Name,
-		CreatedAt: p.CreatedAt,
+		ID:          p.ID,
+		Path:        p.Path,
+		Name:        p.Name,
+		Description: p.Description,
+		CreatedAt:   p.CreatedAt,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

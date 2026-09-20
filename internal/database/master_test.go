@@ -109,7 +109,7 @@ func TestListActors(t *testing.T) {
 func TestRegisterProject_And_Get(t *testing.T) {
 	db := openTestDB(t)
 
-	err := db.RegisterProject("proj-1", "/tmp/my-review", "My Review", "active")
+	err := db.RegisterProject("proj-1", "/tmp/my-review", "My Review", "active", "")
 	if err != nil {
 		t.Fatalf("RegisterProject() error = %v", err)
 	}
@@ -132,7 +132,7 @@ func TestRegisterProject_And_Get(t *testing.T) {
 func TestRegisterProject_DraftStatus(t *testing.T) {
 	db := openTestDB(t)
 
-	err := db.RegisterProject("draft-1", "/tmp/draft", "", "draft")
+	err := db.RegisterProject("draft-1", "/tmp/draft", "", "draft", "")
 	if err != nil {
 		t.Fatalf("RegisterProject() error = %v", err)
 	}
@@ -167,8 +167,8 @@ func TestGetProject_NotFound(t *testing.T) {
 func TestListProjects(t *testing.T) {
 	db := openTestDB(t)
 
-	_ = db.RegisterProject("p1", "/path/1", "Review 1", "active")
-	_ = db.RegisterProject("p2", "/path/2", "Review 2", "active")
+	_ = db.RegisterProject("p1", "/path/1", "Review 1", "active", "")
+	_ = db.RegisterProject("p2", "/path/2", "Review 2", "active", "")
 
 	projects, err := db.ListProjects()
 	if err != nil {
@@ -182,7 +182,7 @@ func TestListProjects(t *testing.T) {
 func TestUpdateProject(t *testing.T) {
 	db := openTestDB(t)
 
-	_ = db.RegisterProject("p1", "/old/path", "Old Name", "active")
+	_ = db.RegisterProject("p1", "/old/path", "Old Name", "active", "")
 	err := db.UpdateProject("p1", "/new/path", "New Name")
 	if err != nil {
 		t.Fatalf("UpdateProject() error = %v", err)
@@ -199,7 +199,7 @@ func TestUpdateProject(t *testing.T) {
 func TestUpdateProjectStatus(t *testing.T) {
 	db := openTestDB(t)
 
-	_ = db.RegisterProject("p1", "/path/1", "Review", "draft")
+	_ = db.RegisterProject("p1", "/path/1", "Review", "draft", "")
 	err := db.UpdateProjectStatus("p1", "active")
 	if err != nil {
 		t.Fatalf("UpdateProjectStatus() error = %v", err)
@@ -215,9 +215,9 @@ func TestCleanupExpiredDrafts(t *testing.T) {
 	db := openTestDB(t)
 
 	// Create drafts with different ages
-	_ = db.RegisterProject("draft-old", "/tmp/old", "Old", "draft")
-	_ = db.RegisterProject("draft-new", "/tmp/new", "New", "draft")
-	_ = db.RegisterProject("active-1", "/tmp/active", "Active", "active")
+	_ = db.RegisterProject("draft-old", "/tmp/old", "Old", "draft", "")
+	_ = db.RegisterProject("draft-new", "/tmp/new", "New", "draft", "")
+	_ = db.RegisterProject("active-1", "/tmp/active", "Active", "active", "")
 
 	// Make draft-old appear old by updating created_at
 	_, _ = db.db.Exec("UPDATE project SET created_at = datetime('now', '-1 hour') WHERE id = 'draft-old'")
@@ -254,7 +254,7 @@ func TestCleanupExpiredDrafts(t *testing.T) {
 func TestPathExists(t *testing.T) {
 	db := openTestDB(t)
 
-	_ = db.RegisterProject("p1", "/path/to/project", "Review", "active")
+	_ = db.RegisterProject("p1", "/path/to/project", "Review", "active", "")
 
 	exists, err := db.PathExists("/path/to/project")
 	if err != nil {
@@ -276,7 +276,7 @@ func TestPathExists(t *testing.T) {
 func TestPathExists_ExcludesProject(t *testing.T) {
 	db := openTestDB(t)
 
-	_ = db.RegisterProject("p1", "/path/to/project", "Review", "active")
+	_ = db.RegisterProject("p1", "/path/to/project", "Review", "active", "")
 
 	// Same path but different project ID should return false
 	exists, err := db.PathExists("/path/to/project")
@@ -285,6 +285,48 @@ func TestPathExists_ExcludesProject(t *testing.T) {
 	}
 	if !exists {
 		t.Error("PathExists() = false, want true")
+	}
+}
+
+// --- Description field ---
+
+func TestRegisterProject_WithDescription(t *testing.T) {
+	db := openTestDB(t)
+
+	err := db.RegisterProject("proj-desc", "/tmp/desc-review", "Desc Review", "active", "")
+	if err != nil {
+		t.Fatalf("RegisterProject() error = %v", err)
+	}
+
+	p, err := db.GetProject("proj-desc")
+	if err != nil {
+		t.Fatalf("GetProject() error = %v", err)
+	}
+	if p == nil {
+		t.Fatal("GetProject() returned nil")
+	}
+	if p.Description != "" {
+		t.Errorf("Description = %q, want empty string", p.Description)
+	}
+}
+
+func TestRegisterProject_WithDescriptionValue(t *testing.T) {
+	db := openTestDB(t)
+
+	err := db.RegisterProject("proj-desc2", "/tmp/desc-review2", "Desc Review 2", "active", "A comprehensive review of XYZ")
+	if err != nil {
+		t.Fatalf("RegisterProject() error = %v", err)
+	}
+
+	p, err := db.GetProject("proj-desc2")
+	if err != nil {
+		t.Fatalf("GetProject() error = %v", err)
+	}
+	if p == nil {
+		t.Fatal("GetProject() returned nil")
+	}
+	if p.Description != "A comprehensive review of XYZ" {
+		t.Errorf("Description = %q, want %q", p.Description, "A comprehensive review of XYZ")
 	}
 }
 
