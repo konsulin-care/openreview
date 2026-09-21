@@ -85,6 +85,18 @@ export interface UpdateProjectResponse {
   created_at: string;
 }
 
+/** Single project error from batch delete. */
+export interface ProjectDeleteError {
+  id: string;
+  error: string;
+}
+
+/** Response from DELETE /api/v1/project (batch). */
+export interface DeleteProjectsResponse {
+  deleted: string[];
+  errors: ProjectDeleteError[];
+}
+
 // --- Client ---
 
 /**
@@ -222,5 +234,25 @@ export class EngineClient {
     }
 
     return response.json() as Promise<{ project_id: string; name: string }>;
+  }
+
+  /**
+   * Delete multiple projects by IDs. Removes from registry and deletes directories from disk.
+   * @param ids — array of project IDs (ULIDs)
+   * @returns Response with deleted IDs and any errors
+   * @throws On network error or non-OK response
+   */
+  async deleteProjects(ids: string[]): Promise<DeleteProjectsResponse> {
+    const response = await fetch(`${this.endpoint}/api/v1/project`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete projects: ${response.status}`);
+    }
+
+    return response.json() as Promise<DeleteProjectsResponse>;
   }
 }

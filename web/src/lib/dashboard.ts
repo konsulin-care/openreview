@@ -318,8 +318,9 @@ export async function initDashboard(): Promise<void> {
   deleteConfirmSubmit?.addEventListener("click", async () => {
     const ids = Array.from(selectedIds);
     try {
-      for (const id of ids) {
-        await client.deleteProject(id);
+      const result = await client.deleteProjects(ids);
+      if (result.errors.length > 0) {
+        throw new Error(`Failed to delete: ${result.errors.map((e) => e.id).join(", ")}`);
       }
       clearSelection();
       deleteConfirmModal?.classList.add("hidden");
@@ -327,7 +328,7 @@ export async function initDashboard(): Promise<void> {
     } catch (err) {
       console.error("[dashboard] failed to delete projects:", err);
       if (deleteConfirmError) {
-        deleteConfirmError.textContent = "Failed to delete one or more projects. Please try again.";
+        deleteConfirmError.textContent = err instanceof Error ? err.message : "Failed to delete one or more projects. Please try again.";
         deleteConfirmError.classList.remove("hidden");
       }
     }

@@ -288,6 +288,72 @@ func TestPathExists_ExcludesProject(t *testing.T) {
 	}
 }
 
+// --- Batch Delete ---
+
+func TestDeleteProjects_Success(t *testing.T) {
+	db := openTestDB(t)
+
+	_ = db.RegisterProject("p1", "/path/1", "Review 1", "active", "")
+	_ = db.RegisterProject("p2", "/path/2", "Review 2", "active", "")
+	_ = db.RegisterProject("p3", "/path/3", "Review 3", "active", "")
+
+	err := db.DeleteProjects([]string{"p1", "p2"})
+	if err != nil {
+		t.Fatalf("DeleteProjects() error = %v", err)
+	}
+
+	// p1 and p2 should be deleted
+	p, _ := db.GetProject("p1")
+	if p != nil {
+		t.Error("p1 should be deleted")
+	}
+	p, _ = db.GetProject("p2")
+	if p != nil {
+		t.Error("p2 should be deleted")
+	}
+
+	// p3 should remain
+	p, _ = db.GetProject("p3")
+	if p == nil {
+		t.Error("p3 should remain")
+	}
+}
+
+func TestDeleteProjects_PartialNotFound(t *testing.T) {
+	db := openTestDB(t)
+
+	_ = db.RegisterProject("p1", "/path/1", "Review 1", "active", "")
+
+	err := db.DeleteProjects([]string{"p1", "nonexistent"})
+	if err != nil {
+		t.Fatalf("DeleteProjects() error = %v", err)
+	}
+
+	// p1 should be deleted despite nonexistent being in the list
+	p, _ := db.GetProject("p1")
+	if p != nil {
+		t.Error("p1 should be deleted")
+	}
+}
+
+func TestDeleteProjects_EmptyList(t *testing.T) {
+	db := openTestDB(t)
+
+	err := db.DeleteProjects([]string{})
+	if err != nil {
+		t.Fatalf("DeleteProjects() error = %v", err)
+	}
+}
+
+func TestDeleteProjects_NilList(t *testing.T) {
+	db := openTestDB(t)
+
+	err := db.DeleteProjects(nil)
+	if err != nil {
+		t.Fatalf("DeleteProjects() error = %v", err)
+	}
+}
+
 // --- Description field ---
 
 func TestRegisterProject_WithDescription(t *testing.T) {

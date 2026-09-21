@@ -14,7 +14,7 @@ import (
 	"github.com/konsulin-care/openreview/internal/ulid"
 )
 
-// ProjectHandler handles GET /api/v1/project and POST /api/v1/project.
+// ProjectHandler handles GET /api/v1/project, POST /api/v1/project, and DELETE /api/v1/project.
 func ProjectHandler(a *app.App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -22,12 +22,102 @@ func ProjectHandler(a *app.App) http.HandlerFunc {
 			handleGetProjects(a, w, r)
 		case http.MethodPost:
 			handleCreateProject(a, w, r)
+		case http.MethodDelete:
+			handleDeleteProjects(a, w, r)
 		default:
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": "method not allowed"})
 		}
 	}
+}
+
+// ProjectError represents a single project deletion error.
+type ProjectError struct {
+	ID    string `json:"id"`
+	Error string `json:"error"`
+}
+
+// DeleteProjectsResponse represents the response for batch project deletion.
+type DeleteProjectsResponse struct {
+	Deleted []string       `json:"deleted"`
+	Errors  []ProjectError `json:"errors"`
+}
+
+// handleDeleteProjects handles DELETE /api/v1/project with a list of IDs.
+func handleDeleteProjects(a *app.App, w http.ResponseWriter, r *http.Request) {
+	if a.State != app.StateReady {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "not initialized"})
+		return
+	}
+
+	if a.DB == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "database not available"})
+		return
+	}
+
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid request body"})
+		return
+	}
+
+	if len(req.IDs) == 0 {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "ids array is required"})
+		return
+	}
+
+	if len(req.IDs) > 100 {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "too many ids (max 100)"})
+		return
+	}
+
+	resp := DeleteProjectsResponse{
+		Deleted: make([]string, 0),
+		Errors:  make([]ProjectError, 0),
+	}
+
+	// Process each ID individually to report partial successes
+	for _, id := range req.IDs {
+		p, err := a.DB.GetProject(id)
+		if err != nil {
+			resp.Errors = append(resp.Errors, ProjectError{ID: id, Error: "failed to get project"})
+			continue
+		}
+		if p == nil {
+			resp.Errors = append(resp.Errors, ProjectError{ID: id, Error: "not found"})
+			continue
+		}
+
+		// Remove directory from disk
+		if err := os.RemoveAll(p.Path); err != nil {
+			resp.Errors = append(resp.Errors, ProjectError{ID: id, Error: "failed to remove directory"})
+			continue
+		}
+
+		// Unregister from DB
+		if err := a.DB.DeleteProject(id); err != nil {
+			resp.Errors = append(resp.Errors, ProjectError{ID: id, Error: "failed to delete from database"})
+			continue
+		}
+
+		resp.Deleted = append(resp.Deleted, id)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 // handleCreateProject creates a new project with a ULID, manifest, and directory structure.

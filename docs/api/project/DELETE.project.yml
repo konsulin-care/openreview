@@ -28,4 +28,4 @@ runtime:
         });
     - type: after-response
       code: |- 
-        bru.runner.setNextRequest(null);
+        bru.runner.setNextRequest("delete projects");

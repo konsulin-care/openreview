@@ -514,6 +514,151 @@ func TestProjectHandler_DELETE_NotInitialized(t *testing.T) {
 	}
 }
 
+// --- Batch DELETE ---
+
+func TestProjectHandler_DELETE_Batch_Success(t *testing.T) {
+	a := app.NewApp()
+	initializeAndClose(t, a)
+
+	handler := ProjectHandler(a)
+
+	// Create 3 projects
+	var ids []string
+	for i := 0; i < 3; i++ {
+		body := fmt.Sprintf(`{"name":"Batch Delete %d"}`, i)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/project", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("create project %d failed: status %d", i, w.Code)
+		}
+		var resp map[string]string
+		_ = json.Unmarshal(w.Body.Bytes(), &resp)
+		ids = append(ids, resp["project_id"])
+	}
+
+	// DELETE first 2
+	deleteBody, _ := json.Marshal(map[string][]string{"ids": ids[:2]})
+	deleteReq := httptest.NewRequest(http.MethodDelete, "/api/v1/project", bytes.NewBuffer(deleteBody))
+	deleteReq.Header.Set("Content-Type", "application/json")
+	deleteW := httptest.NewRecorder()
+	handler.ServeHTTP(deleteW, deleteReq)
+
+	if deleteW.Code != http.StatusOK {
+		t.Fatalf("delete status = %d, want %d", deleteW.Code, http.StatusOK)
+	}
+
+	var deleteResp struct {
+		Deleted []string `json:"deleted"`
+		Errors  []struct {
+			ID    string `json:"id"`
+			Error string `json:"error"`
+		} `json:"errors"`
+	}
+	if err := json.Unmarshal(deleteW.Body.Bytes(), &deleteResp); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+
+	if len(deleteResp.Deleted) != 2 {
+		t.Errorf("deleted count = %d, want 2", len(deleteResp.Deleted))
+	}
+	if len(deleteResp.Errors) != 0 {
+		t.Errorf("errors count = %d, want 0", len(deleteResp.Errors))
+	}
+
+	// Verify first 2 are deleted, third remains
+	p, _ := a.DB.GetProject(ids[0])
+	if p != nil {
+		t.Error("first project should be deleted")
+	}
+	p, _ = a.DB.GetProject(ids[1])
+	if p != nil {
+		t.Error("second project should be deleted")
+	}
+	p, _ = a.DB.GetProject(ids[2])
+	if p == nil {
+		t.Error("third project should remain")
+	}
+}
+
+func TestProjectHandler_DELETE_Batch_PartialNotFound(t *testing.T) {
+	a := app.NewApp()
+	initializeAndClose(t, a)
+
+	handler := ProjectHandler(a)
+
+	// Create 1 project
+	createBody := `{"name":"Only One"}`
+	createReq := httptest.NewRequest(http.MethodPost, "/api/v1/project", bytes.NewBufferString(createBody))
+	createReq.Header.Set("Content-Type", "application/json")
+	createW := httptest.NewRecorder()
+	handler.ServeHTTP(createW, createReq)
+
+	var createResp map[string]string
+	_ = json.Unmarshal(createW.Body.Bytes(), &createResp)
+	realID := createResp["project_id"]
+
+	// DELETE with real ID + nonexistent
+	deleteBody, _ := json.Marshal(map[string][]string{"ids": {realID, "nonexistent"}})
+	deleteReq := httptest.NewRequest(http.MethodDelete, "/api/v1/project", bytes.NewBuffer(deleteBody))
+	deleteReq.Header.Set("Content-Type", "application/json")
+	deleteW := httptest.NewRecorder()
+	handler.ServeHTTP(deleteW, deleteReq)
+
+	if deleteW.Code != http.StatusOK {
+		t.Fatalf("delete status = %d, want %d", deleteW.Code, http.StatusOK)
+	}
+
+	var deleteResp struct {
+		Deleted []string `json:"deleted"`
+		Errors  []struct {
+			ID    string `json:"id"`
+			Error string `json:"error"`
+		} `json:"errors"`
+	}
+	_ = json.Unmarshal(deleteW.Body.Bytes(), &deleteResp)
+
+	if len(deleteResp.Deleted) != 1 {
+		t.Errorf("deleted count = %d, want 1", len(deleteResp.Deleted))
+	}
+	if len(deleteResp.Errors) != 1 {
+		t.Errorf("errors count = %d, want 1", len(deleteResp.Errors))
+	}
+}
+
+func TestProjectHandler_DELETE_Batch_EmptyIds(t *testing.T) {
+	a := app.NewApp()
+	initializeAndClose(t, a)
+
+	handler := ProjectHandler(a)
+	deleteBody := `{"ids":[]}`
+	deleteReq := httptest.NewRequest(http.MethodDelete, "/api/v1/project", bytes.NewBufferString(deleteBody))
+	deleteReq.Header.Set("Content-Type", "application/json")
+	deleteW := httptest.NewRecorder()
+	handler.ServeHTTP(deleteW, deleteReq)
+
+	if deleteW.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d (empty ids should be 400)", deleteW.Code, http.StatusBadRequest)
+	}
+}
+
+func TestProjectHandler_DELETE_Batch_MissingBody(t *testing.T) {
+	a := app.NewApp()
+	initializeAndClose(t, a)
+
+	handler := ProjectHandler(a)
+	deleteReq := httptest.NewRequest(http.MethodDelete, "/api/v1/project", nil)
+	deleteReq.Header.Set("Content-Type", "application/json")
+	deleteW := httptest.NewRecorder()
+	handler.ServeHTTP(deleteW, deleteReq)
+
+	if deleteW.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d (missing body should be 400)", deleteW.Code, http.StatusBadRequest)
+	}
+}
+
 // --- Task 4: POST draft support ---
 
 func TestProjectHandler_POST_DraftStatus(t *testing.T) {

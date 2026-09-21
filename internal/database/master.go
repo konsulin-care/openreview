@@ -291,6 +291,38 @@ func (m *MasterDB) DeleteProject(id string) error {
 	return nil
 }
 
+// DeleteProjects removes multiple projects from the registry by ID in a single transaction.
+// Non-existent IDs are silently skipped. Returns an error if the transaction fails.
+func (m *MasterDB) DeleteProjects(ids []string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	tx, err := m.db.Begin()
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	stmt, err := tx.Prepare("DELETE FROM project WHERE id = ?")
+	if err != nil {
+		return fmt.Errorf("prepare statement: %w", err)
+	}
+	defer func() { _ = stmt.Close() }()
+
+	for _, id := range ids {
+		if _, err := stmt.Exec(id); err != nil {
+			return fmt.Errorf("delete project %s: %w", id, err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return nil
+}
+
 // UpdateActor updates the name and email of an existing actor.
 func (m *MasterDB) UpdateActor(id, name, email string) error {
 	result, err := m.db.Exec(

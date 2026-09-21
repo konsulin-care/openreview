@@ -9,7 +9,7 @@ Chain order is determined by `after-response` scripts calling `bru.runner.setNex
 Do NOT use `seq` for ordering — it determines folder discovery order but does not control chain flow.
 
 ## Chain Order
-1. `GET.health` → 2. `GET.status` → 3. `GET.preflight` → 4. `POST.initialize` → 5. `GET.config` → 6. `GET.actor` → 7. `PUT.actor` → 8. `POST.project` → 9. `GET.projects` → 10. `GET.project.id` → 11. `PUT.project.id` → 12. `DELETE.project` (terminal)
+1. `GET.health` → 2. `GET.status` → 3. `GET.preflight` → 4. `POST.initialize` → 5. `GET.config` → 6. `GET.actor` → 7. `PUT.actor` → 8. `POST.project` → 9. `GET.projects` → 10. `GET.project.id` → 11. `PUT.project.id` → 12. `DELETE.project` → 13. `DELETE.projects` (terminal)
 
 ## folder.yml Structure
 All folder.yml files MUST use the `info:` wrapper to match the OpenCollection spec. Bru skips folders without it.
